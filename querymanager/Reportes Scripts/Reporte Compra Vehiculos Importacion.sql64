@@ -1,5 +1,52 @@
+Alter FUNCTION SBO_TEOJAMA_PREPROD_V3.TEO_FunctionImportacionVehiculos(in FechaIni date, in FechaFin date)
+RETURNS TABLE (
+    "NROMERCADERIA"         nvarchar (100),
+    "NROPEDIDO"             nvarchar (155),
+    "NROFACTURA"            nvarchar (20),
+    "FECHACONTABILIZACION"  varchar (100),
+    "PEDIDO"                nvarchar (25),
+    "ENTRADAMERCADERIA"     nvarchar (50),
+    "CANTIDAD"              int,
+    "FACTURA"               nvarchar (30),
+    "CHASIS"                nvarchar (36),
+    "MOTOR"                 nvarchar(30),
+    "DAI"                   nvarchar (50),
+    "NROLIQUIDACION"        nvarchar (50),
+    "NRODECLARACIONADUANA"  nvarchar (50),
+    "ANIO"                  nvarchar (10),
+    "TOTAL"                 decimal(12,2),
+    "ADUANASPREVISTAS"      decimal(12,2),
+    "PRECIOBASE"            decimal(12,2),
+    "FLETE"                 decimal(12,2),
+    "SEGURO"                decimal(12,2),
+    "MOP"                   decimal(12,2),
+    "INEN"                  decimal(12,2),
+    "ADVALOREM"             decimal(12,2),
+    "ICE"                   decimal(12,2),
+    "MULTAS"                decimal(12,2),
+    "FODIN"                 decimal(12,2),
+    "CORPEI"                decimal(12,2),
+    "CONTROLADUANA"         decimal(12,2),
+    "SALVAGUARDA"           decimal(12,2),
+    "INSPECCION"            decimal(12,2),
+    "AGENTEAFIANZADO"       decimal(12,2),
+    "TRANSPORTE"            decimal(12,2),
+    "ALMACENAJE"            decimal(12,2),
+    "MANTENIMIENTO"         decimal(12,2),
+    "DISPOSITIVO"           decimal(12,2),
+    "SALIDADIVISAS"         decimal(12,2),
+    "OTROS"                 decimal(12,2),
+    "DETFACTURA"            bigint
+                                
+)
 
-----RELACION 2
+LANGUAGE SQLSCRIPT READS SQL DATA AS
+
+--select * from "@SYP_TIPOVENTA"
+BEGIN 
+
+RETURN( 
+
 Select CM."DocNum" AS NroMercaderia,
        CP."DocNum" AS NroPedido,
        CF."DocNum" AS NroFactura,
@@ -9,17 +56,203 @@ Select CM."DocNum" AS NroMercaderia,
        1 as Cantidad,
        --CF."U_SYP_SECDAU" AS NroDau,
        --CF."U_SYP_NRDAU" AS NRORefrendo,
-       CF."U_SYP_MDCD" AS NroFactura,
+       CF."U_SYP_MDCD" AS Factura,
        VE."IntrSerial" as  Chasis,
        VE."U_SYP_MOTOR" as Motor,
        VE."U_SYP_DAI" AS DAI,
+       CF."U_SYP_NROLIQIMP" AS NroLiquidacion,
+       CF."U_SYP_EX_NRO_VERIFI" AS NroDeclaracionAduana,
        VE."U_SYP_ANIO" AS anio,
-       --(Select flete from jshjhsjw) AS FLETE,
-       --(Select flete from jshjhsjw) AS TRANSPORTE,
        
-      
-       --DF."ObjetType" AS OBJ,     
-       --CM."ObjetType" AS OBJ1 
+       (Select IP."DocTotal" from sbo_teojama_preprod_v3.OIPF IP     ---precio entrega
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=IP."DocEntry"
+            where DM."DocEntry"=B."BaseEntry") as Total,
+
+       (Select IP."ActCustom" from sbo_teojama_preprod_v3.OIPF IP     ---precio entrega
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=IP."DocEntry"
+            where DM."DocEntry"=B."BaseEntry") as AduanasPrevistas,
+       
+
+       (Select IP."DocTotal"-IP."ActCustom"-IP."CostSum" from sbo_teojama_preprod_v3.OIPF IP     ---precio entrega
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=IP."DocEntry"
+            where DM."DocEntry"=B."BaseEntry") as PrecioBase,
+
+       
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Flete') as Flete,
+
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Seguro') as Seguro,
+            
+
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - MOP') as MOP,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - INEN') as INEN,
+
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Ad Valorem') as AdValorem,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - ICE') as ICE,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - T Control interes multa') as Multas,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Fodin') as Fodin,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Corpei') as Corpei,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Tasa serv control aduane') as ControlAduana,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Salvaguarda') as Salvaguarda,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Inspección') as Inspeccion,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Planilla agent afianzado') as AgenteAfianzado,
+                                                                                                                                                           
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Transporte') as Transporte,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Almacenaje') as Almacenaje,
+            
+                                                                                                                                                                                          (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Mantenimiento') as Mantenimiento,
+
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Dispositivo') as Dispositivo,
+
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Impuesto Salida Divisas') as SalidaDivisas,
+            
+       (Select P2."CostSum"
+            from sbo_teojama_preprod_v3.IPF2 P2 
+           INNER JOIN sbo_teojama_preprod_v3.OALC OA
+            ON OA."AlcCode"=P2."AlcCode"
+            INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+            ON B."DocEntry"=P2."DocEntry"
+           where DM."DocEntry"=B."BaseEntry"
+            and   OA."AlcName"='Veh - Otros') as Otros , 
+        DF."DocEntry" as DetFactura         
 
 
 from sbo_teojama_preprod_v3.POR1 DP           ---DETALLE PEDIDO DE COMPRA
@@ -40,28 +273,159 @@ ON DF."DocEntry"=CF."DocEntry"
 INNER JOIN sbo_teojama_preprod_v3.OSRI VE
 ON VE."BaseNum"=CM."DocNum"
 and VE."BaseEntry"=DF."TrgetEntry"
-where  CM."DocNum"=21100008
---year(CF."DocDate")=2021
---and   month(CF."DocDate")=1
+where  CF."DocDate" between :FechaIni and :FechaFin
+order by CF."DocDate" asc
+);
+
+
+end;
+
+
+
+
+Select NROMERCADERIA,NROPEDIDO,NROFACTURA,FECHACONTABILIZACION,
+       PEDIDO,ENTRADAMERCADERIA,CANTIDAD,FACTURA,
+       CHASIS,MOTOR,DAI,ANIO,
+       TOTAL,ADUANASPREVISTAS,PRECIOBASE,FLETE,
+       SEGURO,MOP,INEN,ADVALOREM,
+       ICE,MULTAS,FODIN,CORPEI,
+       CONTROLADUANA,SALVAGUARDA,INSPECCION,AGENTEAFIANZADO,
+       TRANSPORTE,ALMACENAJE,MANTENIMIENTO,DISPOSITIVO,
+       SALIDADIVISAS,OTROS ,
+       CF."DocEntry"    
+from SBO_TEOJAMA_PREPROD_V3.TEO_FunctionImportacionVehiculos('2021-01-10','2021-07-30') A
+INNER JOIN sbo_teojama_preprod_v3.OPCH CF
+ON CF."DocEntry"=A."DETFACTURA"
+
+
+
+
+
+
+
+
+CM."DocNum" AS NroMercaderia,
+       CP."DocNum" AS NroPedido,
+       CF."DocNum" AS NroFactura,
+       to_date(CF."DocDate") as FechaContabilizacion,
+       CF."U_SYP_CARPIMP" AS Pedido,
+       DM."ItemCode" as EntradaMercaderia,
+       
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 --REPORTE 2 CARTERA VENCIDA
 
-Select * from sbo_teojama_preprod_v3.OALC OA
-GO
-Select * from sbo_teojama_preprod_v3.IPF2 IP
-go
+Select OA."AlcName" as Tipo,
+       P2."CostSum" as Valor
+from sbo_teojama_preprod_v3.IPF2 P2 
+INNER JOIN sbo_teojama_preprod_v3.OALC OA
+ON OA."AlcCode"=P2."AlcCode"
+INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+ON B."DocEntry"=P2."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.PDN1 DM 
+ON DM."DocEntry"=B."BaseEntry"
+INNER JOIN sbo_teojama_preprod_v3.OPDN CM
+ON DM."DocEntry"=CM."DocEntry"
+where  CM."DocNum"=21100021
+and  OA."AlcName"='Veh - Flete'
+
+
+
+ 
 
 go
-Select * from sbo_teojama_preprod_v3.OIPF IP
+
+Select *
+from sbo_teojama_preprod_v3.OALC OA
+
+
+
+
+Select IP."DocTotal" from sbo_teojama_preprod_v3.OIPF IP     ---precio entrega
+INNER JOIN sbo_teojama_preprod_v3.IPF1 B
+ON B."DocEntry"=IP."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.PDN1 DM
+ON DM."DocEntry"=B."BaseEntry"
+where IP."DocNum"=21000009
+
+
+
+
+
 go
-Select * from sbo_teojama_preprod_v3.OPDN CM
-WHERE CM."DocNum"=21100006
+Select * from sbo_teojama_preprod_v3.OPDN CM   ---entrada de mercaderia
+WHERE CM."DocNum"=21100021
 go
-Select * from sbo_teojama_preprod_v3.PDN1 DM
-where DM."DocEntry"=41
+Select * from sbo_teojama_preprod_v3.PDN1 DM   --detalle de mercaderia
+where DM."DocEntry"=120
 go
-Select * from sbo_teojama_preprod_v3.IPF1 B
+
+Select * from sbo_teojama_preprod_v3.OIPF IP     ---precio entrega
+where IP."DocNum"=21000009
+go
+Select * from sbo_teojama_preprod_v3.IPF1 B       --detalle precio entrega
+where B."DocEntry"=43
+GO
+Select * from sbo_teojama_preprod_v3.IPF2 P2    ---COSTOS DE IMPORTACION
+where P2."DocEntry"=43
+   
+
+
+
+
+
+---OTRO EJEMPLO
+
+
+Select * from sbo_teojama_preprod_v3.OIPF IP     ---precio entrega
+where IP."DocNum"=21000006
+go
+Select * from sbo_teojama_preprod_v3.IPF1 B       --detalle precio entrega
+where B."DocEntry"=35
+GO
+Select * from sbo_teojama_preprod_v3.IPF2 P2    ---COSTOS DE IMPORTACION
+where P2."DocEntry"=35
+GO
+Select * from sbo_teojama_preprod_v3.OPDN CM   ---entrada de mercaderia
+WHERE CM."DocNum"=21100010
+go
+Select * from sbo_teojama_preprod_v3.PDN1 DM   --detalle de mercaderia
+where DM."DocEntry"=55
+
+
+21000006
+
+
+
+
+
+
+
+
+
 
 
 SELECT F."AlcName",E."CostSum" FROM
