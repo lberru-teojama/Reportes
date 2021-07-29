@@ -1,0 +1,75 @@
+
+Select * from sbo_teojama_preprod_v2.ojdt O
+where  O."U_SYP_TIPOPE"='AV'
+
+
+
+
+
+Select O."U_SYP_NUMOPE" AS NroOperacion,
+       O."U_SYP_ENTIDADCRED" AS Entidad,
+       O."U_SYP_ID_ENTIDAD" AS CodProveedor,
+       O."RefDate" as Fecha,
+       O."DueDate" as Fecha2,
+       O."SysTotal" as Total,
+       O."U_SYP_CAPITAL" AS Capital,
+       O."U_SYP_INTDEV" AS Interes,
+       O."U_SYP_VALCOM" AS Comision,
+       O."Memo" as Descripcion
+from sbo_teojama_preprod_v2.ojdt O
+where O."U_SYP_TIPOPE"='AV'
+
+
+
+go
+
+Select O."TransId" as id,
+       O."U_SYP_NUMOPE" AS NroOperacion,
+       O."U_SYP_ENTIDADCRED" AS Entidad,
+       O."U_SYP_ID_ENTIDAD" AS CodProveedor,
+       O."RefDate" as Fecha,
+       O."DueDate" as Fecha2,
+       O."SysTotal" as Total,
+       O."U_SYP_CAPITAL" AS Capital,
+       O."U_SYP_INTDEV" AS Interes,
+       O."U_SYP_VALCOM" AS Comision,
+       O."Memo" as Descripcion
+       
+from sbo_teojama_preprod_v3.ojdt O
+where O."U_SYP_TIPOPE"='PB'
+and O."TransId"<>O."StornoToTr"
+
+
+select *
+from sbo_teojama_preprod_v3.ojdt O
+where O."U_SYP_TIPOPE"='PB'
+and O."TransId"<>O."StornoToTr"
+
+
+
+
+
+
+GO
+Select * from sbo_teojama_preprod_v3.jdt1 J
+where J."TransId"=821
+
+
+
+
+Select * from sbo_teojama_preprod_v2.jdt2 J
+where J."ShortName"='2011010205'
+
+
+
+and O."U_SYP_NUMOPE"<>''
+
+
+
+
+Select * from sbo_teojama_preprod_v2.oact O
+where O."Number"=21000001
+and O."U_SYP_NUMOPE"<>''
+
+
+SELECT * FROM "SBO_TEOJAMA_PREPROD_V3".teotmpecfactura

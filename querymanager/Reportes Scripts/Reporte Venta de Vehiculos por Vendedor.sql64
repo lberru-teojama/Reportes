@@ -1,0 +1,68 @@
+Alter FUNCTION SBO_TEOJAMA_PREPROD_V3.TEO_FunctionFacturaVehiculos(in FechaIni date, in FechaFin date)
+RETURNS TABLE (
+    "Sucursal"  nvarchar (100),
+    "Vendedor"  nvarchar (155),
+    "Cedula"    nvarchar (20),
+    "Nombre"    nvarchar (100),
+    "NroFactura" nvarchar (25),
+    "FechaContabilizacion" date,
+    "SubTotal" decimal(12,2),
+    "Iva" decimal(12,2),
+    "Total" decimal(12,2),
+    "Chasis" nvarchar(30),
+    "DocNum" bigint,
+    "DocEntry" bigint,
+    "Modelo" nvarchar(40),
+    "PorcentajeDescuento" decimal(12,2),
+    "ValorDescuento" decimal(12,2)
+    
+)
+
+LANGUAGE SQLSCRIPT READS SQL DATA AS
+
+--select * from "@SYP_TIPOVENTA"
+BEGIN 
+
+RETURN( 
+    
+Select SUCURSALES."Name" "Sucursal",
+       V."SlpName" as "Vendedor",
+       FACTURA."CardCode" as "Cedula",
+       FACTURA."CardName" as "Nombre",
+       FACTURA."U_SYP_SERIESUC" || '-' || FACTURA."U_SYP_MDSD" || '-' || FACTURA."U_SYP_MDCD" AS "NroFactura",
+       FACTURA."DocDate" as "FechaContabilizacion",
+       FACTURA."BaseAmnt" as "SubTotal",
+       FACTURA."VatSum" as "Iva",
+       FACTURA."DocTotal" as "Total",
+       FACTURA."U_SYP_SERIE" AS "Chasis",
+       FACTURA."DocNum" as "DocNum",
+       FACTURA."DocEntry" as "DocEntry",
+       ifnull((Select D."ItemCode" from  SBO_TEOJAMA_PREPROD_V3."OSRN" D
+        where D."DistNumber"= FACTURA."U_SYP_SERIE"),'') as "Modelo",
+       ifnull((Select IN1."DiscPrcnt" from  SBO_TEOJAMA_PREPROD_V3."INV1" IN1
+         where IN1."DocEntry"=FACTURA."DocEntry"
+         and   IN1."SerialNum"<>''),0) as "PorcentajeDescuento",
+       ifnull((Select IN1."PriceBefDi"-IN1."LineTotal" from  SBO_TEOJAMA_PREPROD_V3."INV1" IN1
+        where IN1."DocEntry"=FACTURA."DocEntry"
+        and   IN1."SerialNum"<>''),0) as "ValorDescuento"
+         
+        
+        
+        
+from SBO_TEOJAMA_PREPROD_V3."OINV" FACTURA
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_TIPOVENTA" TIPO
+on TIPO."Code"=FACTURA."U_SYP_TVENTA"
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_SUCURSALES" SUCURSALES
+on SUCURSALES."Code"=FACTURA."U_SYP_SUC"
+INNER JOIN  SBO_TEOJAMA_PREPROD_V3."OSLP" V
+ON V."SlpCode"=FACTURA."SlpCode"
+WHERE TIPO."Name" in ('Venta de Vehículos')
+and FACTURA."DocDate" between :FechaIni and :FechaFin
+
+
+
+);
+
+END;
+
+

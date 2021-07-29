@@ -1,0 +1,64 @@
+Drop Function "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes
+go
+CREATE FUNCTION "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes(in x int) 
+ RETURNS result_add varchar(20)
+ 
+ LANGUAGE SQLSCRIPT
+ SQL SECURITY INVOKER AS
+ 
+ v_temp varchar(20);
+
+ BEGIN
+ 
+   if (:x=1) then
+        v_temp='ENERO';
+   end if;
+   if (:x=2) then
+        v_temp='FEBRERO';
+   end if;
+   if (:x=3) then
+        v_temp='MARZO';
+   end if;
+   if (:x=4) then
+        v_temp='ABRIL';
+   end if;
+   if (:x=5) then
+        v_temp='MAYO';
+   end if;
+   if (:x=6) then
+        v_temp='JUNIO';
+   end if;
+   if (:x=7) then
+        v_temp='JULIO';
+   end if;
+   if (:x=8) then
+        v_temp='AGOSTO';
+   end if;
+   if (:x=9) then
+        v_temp='SEPTIEMBRE';
+   end if;
+   if (:x=10) then
+        v_temp='OCTUBRE';
+   end if;
+   if (:x=11) then
+        v_temp='NOVIEMBRE';
+   end if;
+   if (:x=12) then
+        v_temp='DICIEMBRE';
+   end if;
+   
+   result_add = :v_temp;
+    
+ END
+ 
+ 
+  
+ Select "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes(10) 
+                from SBO_TEOJAMA_PREPROD_V3.opor T0
+                
+                
+ Select *
+                from SBO_TEOJAMA_PREPROD_V3.opor T0
+                
+                
+                           

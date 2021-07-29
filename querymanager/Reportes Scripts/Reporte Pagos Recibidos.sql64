@@ -1,0 +1,56 @@
+SELECT T0."DocNum" "No RC",
+       T0."DocDate" "Fecha Pago",
+       T4."DocNum" "No Factura",
+       T4."U_SYP_SERIESUC" || '-' || T4."U_SYP_MDSD" || '-' || T4."U_SYP_MDCD" "SRI",
+       T0."CardCode" "Cedula",
+       T0."CardName" "Nombre",
+       T1."SumApplied" "Valor Aplicado",
+       T5."U_NAME" AS Usuario,
+       T6."Name" as Sucursal
+       
+FROM "SBO_TEOJAMA_PREPROD_V3".ORCT T0
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".RCT2 T1 ON T0."DocEntry" = T1."DocNum"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OINV T4 ON T4."DocEntry" = T1."DocEntry"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OUSR T5 ON T5."USERID" = T0."UserSign"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OUBR T6 ON T6."Code" = T5."Branch"
+WHERE T0."Canceled" = 'N' AND T0."DocDate" BETWEEN '2021-01-10' AND '2021-05-28'
+
+
+
+Select * from "SBO_TEOJAMA_PREPROD_V3".ORCT T0
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".OUSR T0
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".OUDG T5
+
+go
+
+Select * from "SBO_TEOJAMA_PREPROD_V3".AUSR T5
+
+Select * from "SBO_TEOJAMA_PREPROD_V3".OUBR
+
+
+
+
+-2
+-2
+-2
+2
+-2
+-2
+-2
+-2
+-2
+-2
+4
+-2
+-2
+3
+1
+2
+3
+3
+
+Branch
+"UserSign
+"

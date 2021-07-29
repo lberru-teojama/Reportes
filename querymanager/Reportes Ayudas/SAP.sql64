@@ -1,0 +1,64 @@
+call "SBO_TEOJAMA_PREPROD_V3"."TEO_PruebaCaja"(1)
+go
+
+drop PROCEDURE "SBO_TEOJAMA_PREPROD_V3"."TEO_PruebaCaja"
+go
+CREATE PROCEDURE "SBO_TEOJAMA_PREPROD_V3"."TEO_PruebaCaja"
+(in toper int )
+LANGUAGE SQLSCRIPT SQL SECURITY DEFINER AS
+BEGIN 
+
+if toper = 1 then
+
+Select "CardCode" "Cedula",
+       "CardName" "Nombre",
+       "DocNum"  "NroDocumento",
+       "NumAtCard"  "Factura",
+       "DocDate"  "FechaFactura",
+       "DocTotal"  "TotalFactura",
+       "PaidSum"  "TotalPagado",
+       "DocTotal"-"PaidSum"  "SaldoPendiente"
+from "SBO_TEOJAMA_PREPROD_V3".oinv
+where "DocTotal"-"PaidSum">0;
+
+end if;
+
+END
+
+
+
+call "SBO_TEOJAMA_PREPROD_V2"."TEO_PruebaCaja"(1)
+go
+
+drop PROCEDURE "SBO_TEOJAMA_PREPROD_V2"."TEO_SpPruebaCaja"
+go
+CREATE PROCEDURE "SBO_TEOJAMA_PREPROD_V2"."TEO_SpPruebaCaja"
+(in toper int )
+LANGUAGE SQLSCRIPT SQL SECURITY DEFINER AS
+BEGIN 
+
+if toper = 1 then
+
+Select "CardCode" "Cedula",
+       "CardName" "Nombre",
+       "DocNum"  "NroDocumento",
+       "NumAtCard"  "Factura",
+       "DocDate"  "FechaFactura",
+       "DocTotal"  "TotalFactura",
+       "PaidSum"  "TotalPagado",
+       "DocTotal"-"PaidSum"  "SaldoPendiente"
+from "SBO_TEOJAMA_PREPROD_V2".oinv
+where "DocTotal"-"PaidSum">0;
+
+end if;
+
+END
+
+
+
+
+B1ADMIN
+Tcs@Hnsap.2o20*
+    
+
+

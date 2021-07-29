@@ -1,0 +1,668 @@
+drop table "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo
+go
+	CREATE Column Table "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo(
+		TEO_DocNum    	  int,
+		TEO_Factura	      varchar(20),
+		TEO_Nombre        varchar(100),
+		TEO_Marca         char(30),		
+		TEO_Modelo        char(100),
+		TEO_Chasis        varchar(20),
+		TEO_Motor         varchar(20),
+		TEO_RAMV          varchar(20),
+		TEO_Precio        decimal(12,2),
+		TEO_Adicional     decimal(12,2),
+		TEO_Adicional2    decimal(12,2),
+		TEO_Iva           decimal(12,2),
+		TEO_Descuento     decimal(12,2),
+		TEO_Interes       decimal(12,2),
+		TEO_TasaInteres   decimal(12,2),
+		TEO_Total         decimal(12,2),
+		TEO_Entrada       decimal(12,2),
+		TEO_Credito       decimal(12,2),
+		TEO_FechaFactura  date,
+		TEO_NroCuota      int,
+		TEO_FechaVencimiento char(20),
+		TEO_CuotaV         decimal(12,2),
+		TEO_CuotaS         decimal(12,2),
+		TEO_CuotaD         decimal(12,2),
+		TEO_Ingreso        varchar(10),
+		TEO_FechaPago      varchar(10),
+		TEO_PagoV          decimal(12,2),
+		TEO_PagoS          decimal(12,2),
+		TEO_PagoD          decimal(12,2),
+		TEO_PagoT          decimal(12,2), 
+		TEO_Mora           decimal(12,2),
+		TEO_FormaPago      char(100),
+		TEO_OrdenVenta     char(30),
+		TEO_DocEntry       bigint
+	)
+
+
+--Select * from "SBO_CAPACITACION_CREDITOVTA_V3"."HAA_PagosEfectuados"
+
+
+
+Alter Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPEstadoCuentaVehiculos(
+in Cedula       char(15),
+in Factura      char(20)
+)
+
+LANGUAGE SQLSCRIPT
+    SQL SECURITY INVOKER 
+as    
+BEGIN 
+
+declare DocEntry            bigint;
+
+declare DocNum              bigint;
+declare PUnitario           decimal(12,2);
+declare Adicional           decimal(12,2);
+declare Adicional1          decimal(12,2);
+
+declare NroFactura          char(20);
+declare Nombre              char(100);
+declare Marca               char(50);
+declare Modelo              char(20);
+declare Chasis              char(30);
+declare Motor               char(30);
+declare Precio              decimal(12,2);
+declare Impuesto            decimal(12,2);
+declare Descuento           decimal(12,2);
+declare Interes             decimal(12,2);
+declare TasaInteres         decimal(12,2);
+declare TotalFactura        decimal(12,2);
+declare Entrada             decimal(12,2);
+declare FechaFactura        date;
+declare FechaVencimiento    date;
+declare CuotaV              decimal(12,2);
+declare CuotaS              decimal(12,2);
+declare CuotaD              decimal(12,2);
+declare NroCuota            int;
+declare OrdenVenta          char(30);
+declare NroAmortizacion     bigint;
+
+declare DocEntry1           bigint;
+declare Nro                 int;
+declare FechaV              date;
+declare Ingreso             bigint;
+declare FechaPago           date;
+declare ValorLetra          decimal(12,2);
+declare Nro1                int;
+declare NroAnterior         int;
+
+DECLARE CURSOR SumFacturaVenta FOR
+Select O."DocNum" as Docnum,
+       O."CardCode" as CI,
+       O."CardName" as Nombre,
+       O."U_SYP_SERIESUC" || '-' || "U_SYP_MDSO" || '-' ||  "U_SYP_MDCO" AS NroFactura,
+       O."DocDate" as FechaFactura,
+       O."VatSum" as Impuesto,
+       O."DocTotal" as TotalFactura,
+       O."DocEntry" as DocEntry,
+       O."U_SYP_ENTVEH" AS Entrada,
+       O."U_SYP_PERINV" AS TasaInteres,
+       O."ImportEnt" as OrdenVenta,
+       O."DocEntry" as DocEntry1
+from SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+Where O."DocNum"=21000155;
+
+DECLARE CURSOR SumDetFacturaVenta FOR
+Select V."LineTotal" as PUnitario,
+       V."SerialNum" as Chasis,
+       V."ItemCode" as Modelo,
+       V."U_SYP_TIPOSERV_V" as Tipo,
+       (Select O."U_SYP_MOTOR" from SBO_CAPACITACION_CREDITOVTA_V3.OSRN O
+        WHERE O."ItemCode"= V."ItemCode"
+        AND   O."DistNumber"=V."SerialNum") as Motor
+from SBO_CAPACITACION_CREDITOVTA_V3.INV1 V
+Where V."DocEntry"=:DocEntry;
+
+DECLARE CURSOR SumAmortizacion FOR
+Select 'A' AS Comen,
+       V."U_ValMen" as CuotaV,
+       V."U_FecCuo" as FechaVencimiento,
+       'VEHICULO' as Tipo,
+       V."LineId" as id
+from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM1" V
+Where V."DocEntry"=:NroAmortizacion
+UNION ALL
+Select 'B' AS Comen,
+       S."U_ValMen" as CuotaV,
+       S."U_FecCuo" as FechaVencimiento,
+       'SEGURO' as Tipo,
+       S."LineId" as id
+from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM2" S
+Where S."DocEntry"=:NroAmortizacion
+UNION ALL
+Select 'C' AS Comen, 
+       D."U_ValMen" as CuotaV,
+       D."U_FecCuo" as FechaVencimiento,
+       'DISPOSITIVO' as Tipo,
+       D."LineId" as id
+from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM3" D
+Where D."DocEntry"=:NroAmortizacion
+order by Comen,id
+;
+
+
+--PAGOS APLICADOS A LOS VENCIMIENTOS
+DECLARE CURSOR SumPagos FOR
+Select P."DocNum"   as Ingreso,
+       P."DocDate"  as FechaPago,
+       P."DocTotal" as PagoTotal,
+       D."DocNum"   as Nro,
+       D."SumApplied" as ValorLetra,
+       D."DocLine" as NroCuota,
+       V1."U_FecCuo" as FechaVencimiento,
+       
+       case when P."CashSum">0 then 'EFECTIVO: ' || cast(P."CashSum" as decimal(12,2))
+          end as FormaPago,
+       case when P."CheckSum">0 then 'PAGO A CUENTA: ' || cast(P."CheckSum" as decimal(12,2))
+          end as FormaPago2,
+       case when P."TrsfrSum">0 then 'DEPOSITO: ' || cast(P."TrsfrSum" as decimal(12,2))
+          end as FormaPago3       
+from SBO_CAPACITACION_CREDITOVTA_V3.orct P
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+ON P."DocEntry"=D."DocNum"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+ON O."DocEntry"=D."DocEntry"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM" V
+ON V."U_DocNum"=O."ImportEnt"
+and V."U_CodeTb"=O."U_CodeTb"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM1" V1
+ON V1."DocEntry"= V."DocEntry"
+and D."DocLine"=V1."U_NumCuo"
+where D."DocEntry"=:DocEntry1    --NRO DE FACTURA DOCENTRY
+and   D."InvType"=13  -- TIPO FACTURA
+and   V."U_DocNum"=:OrdenVenta  --Orden de Venta
+and   O."CANCELED"='N'
+order by D."DocLine";
+
+
+    
+--select * from SBO_CAPACITACION_CREDITOVTA_V3.INV1 V
+--Where "DocEntry"=520
+--go
+--select * from SBO_CAPACITACION_CREDITOVTA_V3.OINV V
+--Where "DocNum"=21900025
+
+--Select *
+--from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM1" V
+--Where V."DocEntry"=90
+
+--Select * from SBO_TEO_TALLERES.OSCL LLAMADASERVICIO
+
+Delete from "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo;
+
+FOR cur_factura as SumFacturaVenta DO
+
+    DocEntry=:cur_factura.DocEntry1;
+    DocNum=:cur_factura.DocNum;
+    NroFactura=:cur_factura.NroFactura;
+    Nombre=:cur_factura.Nombre;
+    Impuesto=:cur_factura.Impuesto;
+    TasaInteres=:cur_factura.TasaInteres;
+    TotalFactura=:cur_factura.TotalFactura;
+    Entrada=:cur_factura.Entrada;
+    FechaFactura=:cur_factura.FechaFactura;
+    OrdenVenta=:cur_factura.OrdenVenta;
+    
+    Select V."DocEntry"
+    into NroAmortizacion
+    from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM" V
+    INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+    ON V."U_DocNum"=O."ImportEnt"
+    and V."U_CodeTb"=O."U_CodeTb"
+    where V."U_DocNum"=OrdenVenta  --orden de venta
+    and   O."CANCELED"='N';
+    
+    FOR cur_detalle as SumDetFacturaVenta DO
+    
+      
+    
+      if :cur_detalle.Tipo='INTERES' then
+         Interes=cur_detalle.PUnitario;
+      end if;
+      
+      if substring(:cur_detalle.Tipo,1,8)='VEHICULO' then
+         Precio=:cur_detalle.PUnitario;
+         Chasis=:cur_detalle.Chasis;
+         Motor=:cur_detalle.Motor;
+         Modelo=:cur_detalle.Modelo;
+      end if;
+      
+      if substring(:cur_detalle.Tipo,1,8)<>'VEHICULO' and :cur_detalle.Tipo<>'INTERES' then
+         Adicional=:cur_detalle.PUnitario;
+      end if;      
+      
+    END FOR;
+
+    FOR cur_amortizacion as SumAmortizacion DO
+    
+            FechaVencimiento=:cur_amortizacion.FechaVencimiento;
+            CuotaV=:cur_amortizacion.CuotaV;
+            NroCuota=:cur_amortizacion.id;
+    
+    
+        --Select * from "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo
+        
+        if :cur_amortizacion.Tipo='VEHICULO' then
+        
+            
+            Insert into "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo (TEO_DocNum,TEO_Factura,TEO_Nombre,
+            TEO_Marca,TEO_Modelo,TEO_Chasis,TEO_Motor,TEO_RAMV,
+            TEO_Precio,TEO_Adicional,TEO_Adicional2,TEO_Iva,TEO_Descuento,
+            TEO_Interes,TEO_TasaInteres,TEO_Total,TEO_Entrada,
+            TEO_Credito,TEO_FechaFactura,TEO_NroCuota,TEO_FechaVencimiento,TEO_CuotaV,
+            TEO_CuotaS,TEO_CuotaD,TEO_Ingreso,TEO_FechaPago,
+            TEO_PagoV,TEO_PagoS,TEO_PagoD,TEO_PagoT,
+            TEO_Mora,TEO_FormaPago,
+            TEO_OrdenVenta,TEO_DocEntry)
+            Values (:cur_factura.DocNum,NroFactura,Nombre,
+                Marca,Modelo,:Chasis,Motor,'',
+                Precio,Adicional,Adicional1,Impuesto,Descuento,
+                Interes,TasaInteres,TotalFactura,Entrada,
+                0,:FechaFactura,NroCuota,FechaVencimiento,CuotaV,
+                0,0,'',null,
+                0,0,0,0,
+                0,'',
+                OrdenVenta,DocEntry);
+	        
+        end if;
+        
+        if :cur_amortizacion.Tipo='SEGURO' then
+            
+            Update "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo 
+            set TEO_CuotaS=:CuotaV
+            where TEO_DocNum=:DocNum
+            AND   TEO_FechaVencimiento=:FechaVencimiento;
+	        
+        end if;
+        
+        if :cur_amortizacion.Tipo='DISPOSITIVO' then
+            
+            Update "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo 
+            set TEO_CuotaD=:CuotaV
+            where TEO_DocNum=:DocNum
+            AND   TEO_FechaVencimiento=:FechaVencimiento;
+	        
+        end if;
+        
+        --select * from "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo
+    
+    END FOR;
+END FOR;  
+
+NroAnterior=0;    
+
+Select TOP 1 T.TEO_OrdenVenta,
+             T.TEO_DocEntry
+into OrdenVenta,DocEntry1
+from "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo T
+where "TEO_DOCNUM"=:DocNum;
+
+    For cur_pagos as SumPagos do
+    
+        Ingreso    =:cur_pagos.Ingreso;
+        FechaPago  =:cur_pagos.FechaPago;
+        ValorLetra =:cur_pagos.ValorLetra;
+        Nro1       =:cur_pagos.NroCuota;
+        FechaV     =:cur_pagos.FechaVencimiento;
+        --FormaPago  =:cur_pagos.NroCuota;
+        if NroAnterior=Nro1 then
+        
+           Insert into "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo (TEO_DocNum,TEO_Factura,TEO_Nombre,
+                    TEO_Marca,TEO_Modelo,TEO_Chasis,TEO_Motor,TEO_RAMV,
+                    TEO_Precio,TEO_Adicional,TEO_Adicional2,TEO_Iva,TEO_Descuento,
+                    TEO_Interes,TEO_TasaInteres,TEO_Total,TEO_Entrada,
+                    TEO_Credito,TEO_FechaFactura,TEO_NroCuota,TEO_FechaVencimiento,TEO_CuotaV,
+                    TEO_CuotaS,TEO_CuotaD,TEO_Ingreso,TEO_FechaPago,
+                    TEO_PagoV,TEO_PagoS,TEO_PagoD,TEO_PagoT,
+                    TEO_Mora,TEO_FormaPago,
+                    TEO_OrdenVenta,TEO_DocEntry)
+           Select   TEO_DocNum,TEO_Factura,TEO_Nombre,
+                    TEO_Marca,TEO_Modelo,TEO_Chasis,TEO_Motor,TEO_RAMV,
+                    TEO_Precio,TEO_Adicional,TEO_Adicional2,TEO_Iva,TEO_Descuento,
+                    TEO_Interes,TEO_TasaInteres,TEO_Total,TEO_Entrada,
+                    TEO_Credito,TEO_FechaFactura,TEO_NroCuota,TEO_FechaVencimiento,TEO_CuotaV,
+                    TEO_CuotaS,TEO_CuotaD,:Ingreso,:FechaPago,
+                    :ValorLetra,0,0,0,
+                    0,TEO_FormaPago,
+                    TEO_OrdenVenta,TEO_DocEntry
+          from "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo
+          where TEO_DocNum=:DocNum
+          and   TEO_NroCuota=:Nro1;
+           
+          else
+          
+           Update "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo 
+           set TEO_Ingreso=:Ingreso,
+               TEO_FechaPago=:FechaPago,
+               TEO_PagoV=:ValorLetra,
+               TEO_Mora=0
+           where TEO_DocNum=:DocNum
+           AND   TEO_FechaVencimiento=:FechaV
+           and   TEO_NroCuota=:Nro1;
+           
+           NroAnterior=Nro1;
+        
+        end if;
+    
+    end for;
+
+end;
+
+
+go
+
+call "SBO_TEOJAMA_PREPROD_V3".TEO_SPEstadoCuentaVehiculos('','')
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".TMP_TEOEstadoCuentaVehiculo
+order by Teo_NroCuota
+
+
+
+Select P."DocNum"   as Ingreso,
+       P."DocDate"  as FechaPago,
+       P."DocTotal" as PagoTotal,
+       D."DocNum"   as Nro,
+       D."SumApplied" as ValorLetra,
+       D."DocLine" as NroCuota,
+       V1."U_FecCuo" as FechaVencimiento,
+       V."DocEntry" as jjjj,
+       case when P."CashSum">0 then 'EFECTIVO: ' || cast(P."CashSum" as decimal(12,2))
+          end as FormaPago,
+       case when P."CheckSum">0 then 'PAGO A CUENTA: ' || cast(P."CheckSum" as decimal(12,2))
+          end as FormaPago2,
+       case when P."TrsfrSum">0 then 'DEPOSITO: ' || cast(P."TrsfrSum" as decimal(12,2))
+          end as FormaPago3       
+from SBO_CAPACITACION_CREDITOVTA_V3.orct P
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+ON P."DocEntry"=D."DocNum"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+ON O."DocEntry"=D."DocEntry"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM" V
+ON V."U_DocNum"=O."ImportEnt"
+and V."U_CodeTb"=O."U_CodeTb"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM1" V1
+ON V1."DocEntry"= V."DocEntry"
+and D."DocLine"=V1."U_NumCuo"
+where D."DocEntry"=493    --NRO DE FACTURA DOCENTRY
+and   D."InvType"=13  -- TIPO FACTURA
+and   V."U_DocNum"=21000108  --Orden de Venta
+and   O."CANCELED"='N'
+order by D."DocLine";
+
+
+
+
+
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.ITR1 TC
+where TC."TransId" =1337
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.OJDT TB
+where TB."TransId" =1325
+and   TB."TransCode"='PO02'
+
+
+
+GO
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.orct P
+where "DocNum"=21000278
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+where "DocNum"=550
+
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.OINV K
+where "DocNum"=21000165
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+where "DocEntry"=493
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.orct P
+where "DocEntry" in (490)
+
+
+go
+
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+where "DocNum" IN(490)
+and "InvType"=30
+
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.ITR1 TC
+where TC."TransId"=1267
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.orct P
+ON P."DocEntry"=D."DocNum"
+where D."DocEntry" =493
+and D."InvType"=13
+
+
+
+Select P."DocNum" as Ingreso,
+       D."DocNum",
+       D."DocEntry",
+       D."SumApplied",
+       OT."TrnsCodDsc",
+       TB."TransCode",
+       P."DocDate"  as FechaPago,
+       P."DocTotal" as PagoTotal,
+       D."DocNum"   as Nro,
+       D."SumApplied" as ValorLetra,
+       D."DocLine" as NroCuota
+from SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.orct P
+ON P."DocEntry"=D."DocNum"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OJDT TB
+ON D."DocEntry"=TB."TransId"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OTRC OT
+on TB."TransCode"=OT."TrnsCode"
+where D."DocNum" IN(490)
+and "InvType"=30
+
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM2" V1
+where V1."DocEntry"=84
+
+
+Select OT."TrnsCodDsc", TB."TransCode" from SBO_CAPACITACION_CREDITOVTA_V3.OJDT TB
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OTRC OT
+on TB."TransCode"=OT."TrnsCode"
+where   TB."TransId"=1325
+
+
+
+go
+
+Select P."DocNum"   as Ingreso,
+       P."DocDate"  as FechaPago,
+       P."DocTotal" as PagoTotal,
+       D."DocNum"   as Nro,
+       D."SumApplied" as ValorLetra,
+       D."DocLine" as NroCuota,
+       V1."U_FecCuo" as FechaVencimiento,
+       
+       case when P."CashSum">0 then 'EFECTIVO: ' || cast(P."CashSum" as decimal(12,2))
+          end as FormaPago,
+       case when P."CheckSum">0 then 'PAGO A CUENTA: ' || cast(P."CheckSum" as decimal(12,2))
+          end as FormaPago2,
+       case when P."TrsfrSum">0 then 'DEPOSITO: ' || cast(P."TrsfrSum" as decimal(12,2))
+          end as FormaPago3       
+       
+       
+from SBO_CAPACITACION_CREDITOVTA_V3.orct P
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+ON P."DocEntry"=D."DocNum"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+ON O."DocEntry"=D."DocEntry"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM" V
+ON V."U_DocNum"=O."ImportEnt"
+and V."U_CodeTb"=O."U_CodeTb"
+INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM1" V1
+ON V1."DocEntry"= V."DocEntry"
+and D."DocLine"=V1."U_NumCuo"
+where D."DocEntry"=476  --NRO DE FACTURA DOCENTRY
+and   D."InvType"=13  --FACTURA
+and   V."U_DocNum"='21000102'  --orden de venta
+and   O."CANCELED"='N'
+
+
+
+ Select V."DocEntry",O."ImportEnt",O."U_CodeTb"
+    --into NroAmortizacion
+    from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM" V
+    INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+    ON V."U_DocNum"=O."ImportEnt"
+    and V."U_CodeTb"=O."U_CodeTb"
+    where V."U_DocNum"='21000108'  --orden de venta
+    and   O."CANCELED"='N'
+
+
+
+
+Select O."DocNum" as Docnum,
+       O."CardCode" as CI,
+       O."CardName" as Nombre,
+       O."U_SYP_SERIESUC" || '-' || "U_SYP_MDSO" || '-' ||  "U_SYP_MDCO" AS NroFactura,
+       O."DocDate" as FechaFactura,
+       O."VatSum" as Impuesto,
+       O."DocTotal" as TotalFactura,
+       O."DocEntry" as DocEntry,
+       O."U_SYP_ENTVEH" AS Entrada,
+       O."U_SYP_PERINV" AS TasaInteres,
+       O."ImportEnt" as OrdenVenta,
+       O."DocEntry"
+from SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+Where "DocNum"=21000155
+
+
+
+
+
+
+
+
+
+
+
+
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM1" V
+where "DocEntry"=77
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM2" S
+where "DocEntry"=77
+
+LEFT JOIN "INV6" AS T7 on T7."DocEntry" = T10."DocEntry" 
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.INV6 D
+where "DocEntry"=476
+
+
+go
+
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.JDT1 TB
+where TB."TransId" =1267
+order by "Line_ID"
+
+
+ V
+
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+INNER JOIN
+ON O."DocEntry"=
+where "DocNum"=21000155
+
+
+
+
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.orct P
+where "DocNum"=21000278
+
+
+
+
+ON FACTURA."DocEntry"=DETALLEPAGO."DocEntry"
+
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.VTR2 O
+
+
+
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM2" S
+where "DocEntry"=77
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.JDT1 TB
+where TB."TransId" =1267
+order by "Line_ID"
+GO
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+where "DocEntry"=1267
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+where "DocEntry"=1267
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.RCT2 D
+where "InvoiceId"=3
+
+Select * from objh   D
+
+
+ Select V."DocEntry"
+    into NroAmortizacion
+    from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM" V
+    INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+    ON V."U_DocNum"=O."ImportEnt"
+    and V."U_CodeTb"=O."U_CodeTb"
+    where V."U_DocNum"=OrdenVenta  --orden de venta
+    and   O."CANCELED"='N';
+
+
+
+
+    
+ Select V."DocEntry"
+    --into NroAmortizacion
+    from SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM" V
+    INNER JOIN SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+    ON V."U_DocNum"=O."ImportEnt"
+    and V."U_CodeTb"=O."U_CodeTb"
+    where V."U_DocNum"='21000108'  --orden de venta
+    and   O."CANCELED"='N'
+      
+
+Select O."DocNum" as Docnum,
+       O."CardCode" as CI,
+       O."CardName" as Nombre,
+       O."U_SYP_SERIESUC" || '-' || "U_SYP_MDSO" || '-' ||  "U_SYP_MDCO" AS NroFactura,
+       O."DocDate" as FechaFactura,
+       O."VatSum" as Impuesto,
+       O."DocTotal" as TotalFactura,
+       O."DocEntry" as DocEntry,
+       O."U_SYP_ENTVEH" AS Entrada,
+       O."U_SYP_PERINV" AS TasaInteres,
+       O."ImportEnt" as OrdenVenta
+from SBO_CAPACITACION_CREDITOVTA_V3.OINV O
+Where "DocNum"=21000155
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V3."HAA_PAGOSEFECTUADOS" 
+where "DocNum"=21000155
+GO
+Select * from SBO_CAPACITACION_CREDITOVTA_V3."HAA_PagosEfectuados" 
+where "DocNum"=21000155
+go
+Select * from SBO_CAPACITACION_CREDITOVTA_V3.INV6
+where "DocEntry"=493
+    
+
+

@@ -1,0 +1,97 @@
+
+----RELACION 2
+Select CM."DocNum" AS NroMercaderia,
+       CP."DocNum" AS NroPedido,
+       CF."DocNum" AS NroFactura,
+       to_date(CF."DocDate") as FechaContabilizacion,
+       CF."U_SYP_CARPIMP" AS Pedido,
+       DM."ItemCode" as EntradaMercaderia,
+       1 as Cantidad,
+       --CF."U_SYP_SECDAU" AS NroDau,
+       --CF."U_SYP_NRDAU" AS NRORefrendo,
+       CF."U_SYP_MDCD" AS NroFactura,
+       VE."IntrSerial" as  Chasis,
+       VE."U_SYP_MOTOR" as Motor,
+       VE."U_SYP_DAI" AS DAI,
+       VE."U_SYP_ANIO" AS anio,
+       --(Select flete from jshjhsjw) AS FLETE,
+       --(Select flete from jshjhsjw) AS TRANSPORTE,
+       
+      
+       --DF."ObjetType" AS OBJ,     
+       --CM."ObjetType" AS OBJ1 
+
+
+from sbo_teojama_preprod_v3.POR1 DP           ---DETALLE PEDIDO DE COMPRA
+INNER JOIN sbo_teojama_preprod_v3.PDN1 DM     ---DETALLE ENTRADA DE MERCADERIA
+ON DP."TrgetEntry"=DM."BaseEntry"
+and DM."BaseLine" = DP."LineNum"
+--and DP."DocEntry" = DM."BaseEntry"
+INNER JOIN sbo_teojama_preprod_v3.OPDN CM     ---CABECERA ENTRADA DE MERCADERIA
+ON CM."DocEntry"=DM."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.OPOR CP     ---CABECERA PEDIDO
+ON CP."DocEntry"=DP."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.PCH1 DF     ---DETALLE FACTURA
+ON DF."BaseEntry"=DP."DocEntry"
+and DF."DocEntry"=DM."BaseEntry"
+and DF."BaseLine"=DM."BaseLine"
+INNER JOIN sbo_teojama_preprod_v3.OPCH CF     ---CABECERA FACTURA
+ON DF."DocEntry"=CF."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.OSRI VE
+ON VE."BaseNum"=CM."DocNum"
+and VE."BaseEntry"=DF."TrgetEntry"
+where  CM."DocNum"=21100008
+--year(CF."DocDate")=2021
+--and   month(CF."DocDate")=1
+
+
+--REPORTE 2 CARTERA VENCIDA
+
+Select * from sbo_teojama_preprod_v3.OALC OA
+GO
+Select * from sbo_teojama_preprod_v3.IPF2 IP
+go
+
+go
+Select * from sbo_teojama_preprod_v3.OIPF IP
+go
+Select * from sbo_teojama_preprod_v3.OPDN CM
+WHERE CM."DocNum"=21100006
+go
+Select * from sbo_teojama_preprod_v3.PDN1 DM
+where DM."DocEntry"=41
+go
+Select * from sbo_teojama_preprod_v3.IPF1 B
+
+
+SELECT F."AlcName",E."CostSum" FROM
+sbo_teojama_preprod_v3.OIPF A 
+INNER JOIN sbo_teojama_preprod_v3.IPF1 B 
+ON A."DocEntry" = B."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.IPF2 E
+ON E."DocEntry" = B."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.OALC F
+ON F."AlcCode" = E."DocEntry"
+
+
+left join sbo_teojama_preprod_v3.PDN1 C 
+on B."BaseEntry" = C."DocEntry"
+and B."LineNum" = C."BaseLine"
+INNER JOIN sbo_teojama_preprod_v3.OPDN D 
+ON C."DocEntry" = D."DocEntry"
+where D."DocNum"=21100006
+
+
+
+    and TIPO."Name"='Venta de Repuestos'
+    
+
+Select * from SBO_CAPACITACION_VTAREPUESTO."@SYP_TIPOVENTA" 
+go
+Select * from "SBO_CAPACITACION_VTAREPUESTO".oinv F
+
+
+TIPO 
+
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO".oinv F

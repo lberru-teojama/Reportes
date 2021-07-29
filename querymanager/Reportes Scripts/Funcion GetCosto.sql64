@@ -1,0 +1,108 @@
+Drop Function "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetCosto
+go
+CREATE FUNCTION "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetCosto(in x char(30),in y char(10)) 
+ RETURNS result_add double
+ 
+ LANGUAGE SQLSCRIPT
+ SQL SECURITY INVOKER AS
+ 
+v_temp double;
+v_fecha char(8);
+bandera int;
+ BEGIN
+ 
+ if y='' then
+    SELECT  TO_VARCHAR (TO_DATE(current_date), 'YYYYMMDD') "to varchar" 
+    into v_fecha
+    FROM DUMMY;
+    
+    y=:v_fecha;
+    
+ end if;
+
+ Select DATS_IS_VALID(y) 
+ into bandera
+ FROM DUMMY;
+
+ if bandera=0 then
+     y='';
+ end if;
+ 
+ 
+ if y='' then
+ 
+    SELECT  TO_VARCHAR (TO_DATE(current_date), 'YYYYMMDD') "to varchar" 
+    into v_fecha
+    FROM DUMMY;
+
+    else
+    
+    v_fecha=:y;
+
+end if;
+
+v_temp=0;
+
+
+if exists(Select T2."ItemCode" from  "SBO_TEOJAMA_PREPROD_V3".OINM T2
+          where T2."ItemCode"=trim(x)) then
+
+
+--REPORTE DE AUDITORIA DE STOCK
+SELECT top 1 round(((SELECT (SUM(Y."TransValue"))  FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate" <=v_fecha))/
+((SELECT (SUM(Y."InQty")-SUM(Y."OutQty"))FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate"<=v_fecha)),2)
+into v_temp
+FROM "SBO_TEOJAMA_PREPROD_V3".OITM T2
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITW T0 ON T0."ItemCode"=T2."ItemCode"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OWHS T1 ON T1."WhsCode"=T0."WhsCode"
+WHERE (SELECT (SUM(Y."InQty")-SUM(Y."OutQty")) FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y 
+       WHERE Y."ItemCode" = T2."ItemCode" 
+       AND Y."Warehouse" = T1."WhsCode" 
+       AND Y."DocDate"<=y) != '0'
+AND T2."ItemCode"=trim(x);
+
+end if;
+
+IF IFNULL(:v_temp, 0) = 0 THEN
+    v_temp=0;
+end if;
+ 
+   result_add = :v_temp;
+    
+END
+ 
+ 
+ go
+  
+ Select "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetCosto('04111-78082','') 
+                from SBO_TEOJAMA_PREPROD_V3.opor T0
+GO
+
+
+Select T2."ItemCode" from  "SBO_TEOJAMA_PREPROD_V3".OINM T2
+          where T2."ItemCode"='04111-7C061'
+          
+              
+ Select DATS_IS_VALID('') 
+ --into bandera
+ FROM DUMMY
+ 
+ Select T2."ItemCode" from  "SBO_TEOJAMA_PREPROD_V3".OITM T2
+          where T2."ItemCode"='04111-7C061'
+               
+           
+
+--REPORTE DE AUDITORIA DE STOCK
+SELECT top 1 round(((SELECT (SUM(Y."TransValue"))  FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate" <='20210713'))/
+((SELECT (SUM(Y."InQty")-SUM(Y."OutQty"))FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate"<='20210713')),2)
+--into v_temp
+FROM "SBO_TEOJAMA_PREPROD_V3".OITM T2
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITW T0 ON T0."ItemCode"=T2."ItemCode"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OWHS T1 ON T1."WhsCode"=T0."WhsCode"
+WHERE (SELECT (SUM(Y."InQty")-SUM(Y."OutQty")) FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y 
+       WHERE Y."ItemCode" = T2."ItemCode" 
+       AND Y."Warehouse" = T1."WhsCode" 
+       AND Y."DocDate"<='20210713') != '0'
+AND T2."ItemCode"='04111-7C061'
+
+

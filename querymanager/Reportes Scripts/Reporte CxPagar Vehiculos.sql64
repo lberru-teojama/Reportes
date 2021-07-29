@@ -1,0 +1,298 @@
+Select * from sbo_teojama_preprod_v3.opor PEDIDO
+where "DocNum"=21100008
+go
+Select * from sbo_teojama_preprod_v3.por1 DETPEDIDO
+where "DocEntry"=33
+go
+Select * from sbo_teojama_preprod_v3.OPCH FACTURA  
+where FACTURA."DocNum"=21000222
+go
+Select * from sbo_teojama_preprod_v3.PCH1 DETFACTURA  
+where DETFACTURA."DocEntry"=99
+go
+Select "FirmCode" from sbo_teojama_preprod_v3.oitm ARTICULO
+WHERE ARTICULO."ItemCode"='GH8JM7A-XG3'
+go
+Select * from sbo_teojama_preprod_v3.OMRC ORIGENARTICULO
+WHERE ORIGENARTICULO."FirmCode"=77
+
+
+
+--RELACION DETALLE DEL PEDIDO CON LA FACTURA
+Select PEDIDO."DocNum" as Pedido,
+       FACTURA."DocNum" as Factura,
+       FACTURA."TaxDate" as FechaFactura,
+       FACTURA."DocDueDate" as FechaVencimiento,
+       DETFACTURA."ItemCode" as Modelo,
+       DETFACTURA."Quantity" as Cantidad,
+       DETFACTURA."LineTotal" as Precio,
+       
+
+from sbo_teojama_preprod_v3.OPCH FACTURA  
+INNER JOIN sbo_teojama_preprod_v3.PCH1 DETFACTURA  
+ON DETFACTURA."DocEntry"=FACTURA."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.por1 DETPEDIDO
+ON DETPEDIDO."DocEntry"=DETFACTURA."BaseEntry"
+and DETPEDIDO."BaseLine"=DETFACTURA."BaseLine"
+INNER JOIN sbo_teojama_preprod_v3.opor PEDIDO
+ON PEDIDO."DocEntry"=DETPEDIDO."DocEntry"
+where PEDIDO."DocNum"=21100008
+
+
+
+Select * from sbo_teojama_preprod_v3.opor PEDIDO
+
+where "DocNum"=21100012
+go
+Select * from sbo_teojama_preprod_v3.por1 DETPEDIDO
+where "DocEntry"=50
+
+
+
+ON DF."BaseEntry"=DP."DocEntry"
+and DF."DocEntry"=DM."BaseEntry"
+and DF."BaseLine"=DM."BaseLine"
+
+
+Select * from sbo_teo_talleres.scl4 DF   
+
+
+INNER JOIN sbo_teojama_preprod_v3.PCH1 DF   
+
+
+
+Alter Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPCxPVehiculos(
+in toper        int,
+in TipoPedido   char(30)
+--OUT TMP         "SBO_TEOJAMA_PREPROD_V3".TEOCARTERATYPE
+)
+
+LANGUAGE SQLSCRIPT
+    SQL SECURITY INVOKER 
+as    
+BEGIN 
+
+DECLARE Modelo              varchar(30)='';
+declare Precio              decimal(12,2)=0;
+declare TotalLinea          decimal(12,2)=0;
+declare Pedido              bigint=0;
+declare Cantidad            int=0;
+declare FechaFactura        date;
+declare FechaVencimiento    date;
+declare NroMeses            int;
+declare NroDias             int;
+declare Estado              varchar(20);
+declare miFactura           char(20);
+declare Bandera             int;
+
+DECLARE CURSOR SumPedido FOR
+Select PEDIDO."DocNum" as Documento,
+       PEDIDO."CardName" as Proveedor,
+       PEDIDO."CardCode" AS RUC,
+       PEDIDO."TaxDate" as FechaDocumento,
+       PEDIDO."DocDate" as FechaContabilizacion,
+       PEDIDO."DocDueDate" as FechaVencimiento,
+       PEDIDO."DocTotal" as Total,
+       PEDIDO."U_SYP_CARPIMP" AS Carpeta,
+       PEDIDO."DocEntry" as DocEntry,
+       DETPEDIDO."ItemCode" as Modelo,
+       DETPEDIDO."Quantity" as Cantidad,
+       DETPEDIDO."LineTotal" as Precio,
+       DETPEDIDO."Price" as PUnitario
+from sbo_teojama_preprod_v3.opor PEDIDO
+INNER JOIN SBO_TEOJAMA_PREPROD_V3.por1 DETPEDIDO
+ON PEDIDO."DocEntry"=DETPEDIDO."DocEntry"
+INNER JOIN SBO_TEOJAMA_PREPROD_V3.oitm ARTICULO
+ON ARTICULO."ItemCode"=DETPEDIDO."ItemCode"
+INNER JOIN sbo_teojama_preprod_v3.OMRC ORIGENARTICULO
+ON ARTICULO."FirmCode"=ORIGENARTICULO."FirmCode"
+where PEDIDO."U_SYP_CLASECOMPRA"='V'
+and ORIGENARTICULO."FirmName"=:TipoPedido
+and "DocNum" in (21100033,21100020,21100008)
+;
+
+--Select "FirmCode" from sbo_teojama_preprod_v3.oitm ARTICULO
+--WHERE ARTICULO."ItemCode"='GH8JM7A-XG3'--
+--go
+--Select * from sbo_teojama_preprod_v3.OMRC ORIGENARTICULO
+--WHERE ORIGENARTICULO."FirmCode"=77
+
+DECLARE CURSOR SumFactura FOR
+Select PEDIDO."DocNum" as Pedido,
+       FACTURA."DocNum" as Factura,
+       FACTURA."TaxDate" as FechaFactura,
+       FACTURA."DocDueDate" as FechaVencimiento,
+       DETFACTURA."ItemCode" as Modelo,
+       DETFACTURA."Quantity" as Cantidad,
+       DETFACTURA."LineTotal" as Precio,
+       FACTURA."U_SYP_MDCD" as NroFactura,
+       DETFACTURA."Price" as PUnitario
+from sbo_teojama_preprod_v3.OPCH FACTURA  
+INNER JOIN sbo_teojama_preprod_v3.PCH1 DETFACTURA  
+ON DETFACTURA."DocEntry"=FACTURA."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.por1 DETPEDIDO
+ON DETPEDIDO."DocEntry"=DETFACTURA."BaseEntry"
+and DETPEDIDO."BaseLine"=DETFACTURA."BaseLine"
+INNER JOIN sbo_teojama_preprod_v3.opor PEDIDO
+ON PEDIDO."DocEntry"=DETPEDIDO."DocEntry"
+where PEDIDO."DocNum"=:Pedido;
+
+
+	CREATE LOCAL TEMPORARY TABLE "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS(
+		"TEO_Modelo"    	    varchar(30),
+		"TEO_Cantidad"		    int,
+		"TEO_Precio"            decimal(12,2),
+		"TEO_TotalLinea"        decimal(12,2),
+		"TEO_Pedido"            varchar(20),
+		"TEO_Carpeta"           varchar(30),
+		"TEO_FechaPedido"       varchar(10),
+		"TEO_FechaFactura"      varchar(10),
+		"TEO_FechaVencimiento"  varchar(10),
+		"TEO_NroFactura"        varchar(30),
+		"TEO_Estado"            varchar(20)
+	);
+	
+NroMeses=2;
+NroDias=180;
+
+
+Delete from "SBO_TEOJAMA_PREPROD_V3".TEOPrueba;
+
+FOR cur_pedido as SumPedido DO
+
+    Bandera=1;
+
+    Modelo=cur_pedido.Modelo;
+    Cantidad=cur_pedido.Cantidad;
+    Precio=cur_pedido.PUnitario;
+    TotalLinea=cur_pedido.Precio;
+    
+    miFactura='PED ' || cur_pedido.Documento;
+    Pedido=cur_pedido.Documento;
+    Estado='PROYECTADO';
+    
+    FechaFactura=ADD_MONTHS(cur_pedido.FechaDocumento, NroMeses);
+    FechaVencimiento=ADD_DAYS(FechaFactura, NroDias);
+    
+    --Insert into "SBO_TEOJAMA_PREPROD_V3".TEOPrueba (PRU_CODIGO,PRU_NOMBRE,PRU_VALOR)
+    --Values (:FechaFactura,:FechaVencimiento,5);
+    
+
+    FOR cur_factura as SumFactura DO
+    
+        Insert into "SBO_TEOJAMA_PREPROD_V3".TEOPrueba (PRU_CODIGO,PRU_NOMBRE,PRU_VALOR)
+        Values (:FechaFactura,:FechaVencimiento,1);
+            
+        FechaFactura=cur_factura.FechaFactura;
+        FechaVencimiento=cur_factura.FechaVencimiento;
+        Modelo=cur_factura.Modelo;
+        Cantidad=cur_factura.Cantidad;
+        Precio=cur_factura.PUnitario;  
+        TotalLinea=cur_factura.Precio;  
+        miFactura='FAC ' || cur_factura.Factura;
+        Estado='REAL';   
+        
+        Bandera=0;
+        
+        Insert into "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS
+        Values (:Modelo,:Cantidad,:Precio,
+                :TotalLinea,
+                :miFactura,'',to_varchar(cur_pedido.FechaDocumento,'YYYY-MM-DD'),
+                to_varchar(:FechaFactura,'YYYY-MM-DD'),to_varchar(:FechaVencimiento,'YYYY-MM-DD'),'',
+                :Estado);
+           
+
+    END FOR;
+    
+    if Bandera=1 then
+    
+    Insert into "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS
+    Values (:Modelo,:Cantidad,:Precio,
+            :TotalLinea,
+            :miFactura,'',to_varchar(cur_pedido.FechaDocumento,'YYYY-MM-DD'),
+            to_varchar(:FechaFactura,'YYYY-MM-DD'),to_varchar(:FechaVencimiento,'YYYY-MM-DD'),'',
+            :Estado);
+            
+    end if;
+            
+END FOR;
+
+if toper = 1 then   --CONSULTA ANUAL
+
+    Select 
+    "TEO_Modelo" as Modelo,
+    "TEO_Pedido" as Pedido,
+    YEAR(TMP."TEO_FechaPedido") || ' ' || "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes(MONTH(TMP."TEO_FechaPedido")) as FechaPedido,
+    YEAR(TMP."TEO_FechaFactura") || ' ' || "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes(MONTH(TMP."TEO_FechaFactura")) as FechaFactura,
+    YEAR(TMP."TEO_FechaVencimiento") || ' ' || "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes(MONTH(TMP."TEO_FechaVencimiento")) as FechaVencimiento,
+    "TEO_Estado" as Estado,
+    "TEO_Cantidad" as Cantidad,
+    "TEO_Precio" as PUnitario,
+    "TEO_TotalLinea" AS Total
+    from "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS TMP 
+    where  "TEO_Estado"='REAL'
+    UNION
+    Select 
+    "TEO_Modelo" as Modelo,
+    "TEO_Pedido" as Pedido,
+    YEAR(TMP."TEO_FechaPedido") || ' ' || "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes(MONTH(TMP."TEO_FechaPedido")) as FechaPedido,
+    YEAR(TMP."TEO_FechaFactura") || ' ' || "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes(MONTH(TMP."TEO_FechaFactura")) as FechaFactura,
+    YEAR(TMP."TEO_FechaVencimiento") || ' ' || "SBO_TEOJAMA_PREPROD_V3".TEO_FunctiongetMes(MONTH(TMP."TEO_FechaVencimiento")) as FechaVencimiento,
+    "TEO_Estado" as Estado,
+    "TEO_Cantidad" as Cantidad,
+    "TEO_Precio" as PUnitario,
+    "TEO_TotalLinea" AS Total
+    from "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS TMP    
+    where "TEO_Estado"='PROYECTADO'
+    order by Pedido,Modelo
+    ;
+    
+    Drop Table "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS;
+
+end if;
+
+if toper=2 then  --CONSULTA MENSUAL
+
+    Select 
+    "TEO_Modelo" as Modelo,
+    "TEO_Pedido" as Pedido,
+    TMP."TEO_FechaPedido" as FechaPedido,
+    TMP."TEO_FechaFactura" as FechaFactura,
+    TMP."TEO_FechaVencimiento" as FechaVencimiento,
+    "TEO_Estado" as Estado,
+    "TEO_Cantidad" as Cantidad,
+    "TEO_Precio" as PUnitario,
+    "TEO_TotalLinea" AS Total
+    from "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS TMP 
+    where  "TEO_Estado"='REAL'
+    UNION
+    Select 
+    "TEO_Modelo" as Modelo,
+    "TEO_Pedido" as Pedido,
+    TMP."TEO_FechaPedido" as FechaPedido,
+    TMP."TEO_FechaFactura" as FechaFactura,
+    TMP."TEO_FechaVencimiento" as FechaVencimiento,
+    "TEO_Estado" as Estado,
+    "TEO_Cantidad" as Cantidad,
+    "TEO_Precio" as PUnitario,
+    "TEO_TotalLinea" AS Total
+    from "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS TMP    
+    where "TEO_Estado"='PROYECTADO'
+    order by Pedido,Modelo
+    ;
+    
+    Drop Table "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS;
+
+end if;
+
+end;
+
+go
+
+call "SBO_TEOJAMA_PREPROD_V3".TEO_SPCxPVehiculos(2,'HINO COLOMBIA')
+
+
+GO
+select * from "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOCXPVEHICULOS
+
+

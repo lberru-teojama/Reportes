@@ -1,0 +1,239 @@
+
+
+
+OPCH  --FACTURA DE PROVEEDORES
+
+
+Select "DocNum",
+       "U_SYP_CARPIMP" AS Pedido,
+       "U_SYP_SECDAU" AS NroDau,
+       "U_SYP_NRDAU" AS NRORefrendo,
+       "U_SYP_MDCD" AS NroFactura
+       
+
+
+from sbo_teojama_preprod_v3.OPCH --FACTURA DE RESERVA
+INNER JOIN  sbo_teojama_preprod_v3.OSRI
+ON 
+
+WHERE "U_SYP_CLASECOMPRA"='V'
+
+
+
+
+Select * from sbo_teojama_preprod_v3.RSRN
+
+GO
+
+21100010
+
+Select * from sbo_teojama_preprod_v3.OITL
+where "DocNum"='21100006'
+GO
+
+
+---TABLA DE RELACION
+Select * from sbo_teojama_preprod_v3.OSRI
+where "ItemCode"='AK8JRSA'
+
+GO
+
+
+Select * from sbo_teojama_preprod_v3.OSRN
+where "ItemCode"='GH8JM7A-XG3'
+
+GO
+Select * from sbo_teojama_preprod_v3.OSRN
+where "ItemCode"='AK8JRSA'
+
+
+GO
+Select * from sbo_teojama_preprod_v3.PDN1
+where "DocEntry"=55
+
+GO
+Select * from sbo_teojama_preprod_v3.OPDN
+WHERE "DocNum"='21100010'
+GO
+Select * from sbo_teojama_preprod_v3.OPCH
+WHERE "DocNum"='21000041'
+
+
+Select * from sbo_teojama_preprod_v3.IBT1
+
+Select * from sbo_teojama_preprod_v3.PCH1  --detalle de factura de reserva compras
+where "DocEntry"=74
+go
+Select * from sbo_teojama_preprod_v3.OPCH  --CABECERA de factura de reserva compras
+where "DocNum"=21000041
+
+
+
+
+
+Select * from sbo_teojama_preprod_v3.PCH1  --detalle de factura de reserva compras
+where "DocEntry"=74
+GO
+Select * from sbo_teojama_preprod_v3.OPDN  --detalle de factura de reserva compras
+where "DocEntry"=50
+
+
+
+--PEDIDO DE COMPRA
+Select * from sbo_teojama_preprod_v3.OPOR
+where "DocNum"=21100012
+go
+--DETALLE ÉPEDIDO DE COMPRA
+Select * from sbo_teojama_preprod_v3.POR1
+where "DocEntry"=50
+
+go
+Select * from sbo_teojama_preprod_v3.PDN1  --detalle de ENTRADA DE MERCADERIA
+where "DocEntry"=55
+go
+Select * from sbo_teojama_preprod_v3.OPDN  --CABECERA de ENTRADA DE MERCADERIA
+where "DocNum"=21100010
+go
+
+--PEDIDO DE COMPRA
+Select * from sbo_teojama_preprod_v3.OPOR
+where "DocNum"=21100008
+go
+--DETALLE ÉPEDIDO DE COMPRA
+Select * from sbo_teojama_preprod_v3.POR1
+where "DocEntry"=33
+
+go
+go
+Select * from sbo_teojama_preprod_v3.PDN1  --detalle de ENTRADA DE MERCADERIA
+where "DocEntry"  IN (47)
+go
+Select * from sbo_teojama_preprod_v3.OPCH  --CABECERA de factura de reserva compras
+where "DocNum"=21000014
+GO
+
+go
+Select * from sbo_teojama_preprod_v3.OSRN   --TABLA DE VEHICULOS ENTRADA DE MERCADERIA
+where "ItemCode"='AK8JRSA'
+
+
+Select * from sbo_teojama_preprod_v3.OSRI   --TABLA DE VEHICULOS ENTRADA DE MERCADERIA
+where "BaseNum"=21100009
+GO
+Select * from sbo_teojama_preprod_v3.OPDN  --CABECERA de ENTRADA DE MERCADERIA
+where "DocNum" IN (21100009)
+go
+Select * from sbo_teojama_preprod_v3.PCH1  --detalle de factura de reserva compras
+where "DocEntry"=44
+
+
+----RELACION 2
+Select CM."DocNum" AS NroMercaderia,
+       CP."DocNum" AS NroPedido,
+       CF."DocNum" AS NroFactura,
+       to_date(CF."DocDate") as FechaContabilizacion,
+       CF."U_SYP_CARPIMP" AS Pedido,
+       DM."ItemCode" as EntradaMercaderia,
+       1 as Cantidad,
+       --CF."U_SYP_SECDAU" AS NroDau,
+       --CF."U_SYP_NRDAU" AS NRORefrendo,
+       CF."U_SYP_MDCD" AS NroFactura,
+       VE."IntrSerial" as  Chasis,
+       VE."U_SYP_MOTOR" as Motor,
+       VE."U_SYP_DAI" AS DAI,
+       VE."U_SYP_ANIO" AS anio
+       --DF."ObjetType" AS OBJ,     
+       --CM."ObjetType" AS OBJ1 
+
+
+from sbo_teojama_preprod_v3.POR1 DP           ---DETALLE PEDIDO DE COMPRA
+INNER JOIN sbo_teojama_preprod_v3.PDN1 DM     ---DETALLE ENTRADA DE MERCADERIA
+ON DP."TrgetEntry"=DM."BaseEntry"
+and DM."BaseLine" = DP."LineNum"
+--and DP."DocEntry" = DM."BaseEntry"
+INNER JOIN sbo_teojama_preprod_v3.OPDN CM     ---CABECERA ENTRADA DE MERCADERIA
+ON CM."DocEntry"=DM."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.OPOR CP     ---CABECERA PEDIDO
+ON CP."DocEntry"=DP."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.PCH1 DF     ---DETALLE FACTURA
+ON DF."BaseEntry"=DP."DocEntry"
+and DF."DocEntry"=DM."BaseEntry"
+and DF."BaseLine"=DM."BaseLine"
+INNER JOIN sbo_teojama_preprod_v3.OPCH CF     ---CABECERA FACTURA
+ON DF."DocEntry"=CF."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.OSRI VE
+ON VE."BaseNum"=CM."DocNum"
+and VE."BaseEntry"=DF."TrgetEntry"
+where  CM."DocNum"=21100008
+--year(CF."DocDate")=2021
+--and   month(CF."DocDate")=1
+
+
+
+PCH1.BaseEntry = OPDN.DocEntry
+PCH1.ObjetType = OPDN.ObjectType
+
+---AYUDA DE SAP
+
+SELECT *
+FROM sbo_teojama_preprod_v3.OPOR T0
+INNER JOIN sbo_teojama_preprod_v3.POR1 T1 ON T0."DocEntry" = T1."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.PDN1 T2 ON T1."DocEntry" = T2."BaseEntry"
+INNER JOIN sbo_teojama_preprod_v3.OPDN T3 ON T3."DocEntry" = T2."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.PCH1 T4 ON T2."DocEntry" = T4."BaseEntry"
+INNER JOIN sbo_teojama_preprod_v3.OPCH T5 ON T4."DocEntry" = T5."DocEntry"
+where T0."DocNum"=21100012
+
+
+OPOR ====>PEDIDO
+
+Select * from sbo_teojama_preprod_v3.OPOR T0
+INNER JOIN sbo_teojama_preprod_v3.POR1 T1 ON T0."DocEntry" = T1."DocEntry"
+INNER JOIN sbo_teojama_preprod_v3.PDN1 T2 ON T1."DocEntry" = T2."BaseEntry"
+where "DocNum"=21100012
+
+go
+Select * from sbo_teojama_preprod_v3.POR1
+where "DocEntry"=50
+GO
+Select * from sbo_teojama_preprod_v3.PDN1
+where "DocEntry"=50
+
+
+--EJEMPLO
+
+SELECT
+T0."CardCode",
+T0."CardName",
+T0."DocNum",
+T0."DocDate",
+T1."WhsCode",
+T1."ItemCode",
+T1."Dscription",
+T1."LineNum"+1 AS Linea,
+T1."Quantity", 
+T1."Currency",
+T1."PriceAfVAT",
+T1."Quantity"*T1."PriceAfVAT" as "Total"
+--'Doc Dest.' = CASE 
+--WHEN T3.OBJTYPE = '18' AND T3.ISINS = 'Y' THEN 'Fact. Reserva Prov.'
+--WHEN T3.OBJTYPE = '18' AND T3.ISINS = 'N' THEN 'Fact. Prov'
+--WHEN T5.OBJTYPE = '20' THEN 'Entrada Merc.'
+--ELSE NULL END,
+--'Num. Doc' = CASE 
+--WHEN T3.OBJTYPE = '18' THEN T3.DOCNUM
+--WHEN T5.OBJTYPE = '20' THEN T5.DOCNUM
+--ELSE NULL END
+
+FROM sbo_teojama_preprod_v3.OPOR T0
+INNER JOIN sbo_teojama_preprod_v3.POR1 T1 ON T0."DocEntry" = T1."DocEntry"
+LEFT OUTER JOIN sbo_teojama_preprod_v3.PCH1 T2 ON T2."BaseEntry" = T1."DocEntry" AND T2."BaseType" = T1."ObjType" AND T2."BaseLine" = T1."LineNum"
+LEFT OUTER JOIN sbo_teojama_preprod_v3.OPCH T3 ON T2."DocEntry" = T3."DocEntry"
+LEFT OUTER JOIN sbo_teojama_preprod_v3.PDN1 T4 ON T4."BaseEntry" = T1."DocEntry" AND T4."BaseType" = T1."ObjType" AND T4."BaseLine" = T1."LineNum"
+LEFT OUTER JOIN sbo_teojama_preprod_v3.OPDN T5 ON T4."DocEntry" = T5."DocEntry"
+
+WHERE
+T0."CardCode" ='%%' 
+--T0."CANCELED" ='N' AND
+--T1."LineStatus" = 'C'
+ORDER BY T0."DocNum" ASC

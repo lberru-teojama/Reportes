@@ -1,0 +1,185 @@
+Drop Function "SYPSOFT_TALLERES".TEO_FunctiongetTiempo
+go
+CREATE FUNCTION "SYPSOFT_TALLERES".TEO_FunctiongetTiempo
+(in FechaInicio date,
+ in HoraInicio  char(10),
+ in FechaFin    date,
+ in HoraFin     char(10)
+ ) 
+ RETURNS miValor char(20)
+ 
+ LANGUAGE SQLSCRIPT
+ SQL SECURITY INVOKER AS
+ 
+v_ini    char(20);
+v_fin    char(20);
+cnt      int; 
+bandera  int;
+i        int;
+ BEGIN
+ 
+declare TiempoCalculo       double;
+declare TiempoRedondeo      double;
+declare TiempoCalculo1       double;
+declare TiempoRedondeo1      double;
+declare ValorMinutos        char(10);
+declare TiempoPausa         char(20);
+declare Tiempo              char(20);
+declare CalculoMinutos      double;
+declare CalculoMinutos5      double;
+declare CalculoMinutos1      double;
+declare miHora              char(10);
+declare miValorEntero      double;
+declare miValorDecimal     double;
+declare miPrueba            char(20);
+ 
+ 
+    cnt := 0;
+    i := 0;
+    while :i <= days_between(:FechaInicio, :FechaFin)
+    do
+        if WEEKDAY( ADD_DAYS(:FechaInicio,:i) ) < 5
+        then
+            cnt := :cnt + 1;
+        end if;
+        i := :i + 1;
+    end while;
+    
+    if :cnt>=2 then
+        miHora=(:cnt-2)*8;
+        else
+        miHora=0;
+    end if;
+    
+    if (:cnt>=2) then
+        SELECT SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicio),'2021-01-01 18:00')  / 3600 ,TO_INTEGER((SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicio),'2021-01-01 18:00')  / 3600)) 
+        into TiempoCalculo,TiempoRedondeo
+        FROM DUMMY;
+        
+        SELECT SECONDS_BETWEEN ('2021-01-01 08:00','2021-01-01 ' || trim(HoraFin) )  / 3600 ,TO_INTEGER((SECONDS_BETWEEN ('2021-01-01 08:00','2021-01-01 ' || trim(HoraFin) )  / 3600)) 
+        into TiempoCalculo1,TiempoRedondeo1
+        FROM DUMMY;
+        
+    
+        CalculoMinutos1=(TiempoCalculo1-TiempoRedondeo1)*60;
+        CalculoMinutos=(TiempoCalculo-TiempoRedondeo)*60;
+        
+        CalculoMinutos=round(CalculoMinutos+CalculoMinutos1,0);
+    
+        
+        TiempoRedondeo=TiempoRedondeo+TiempoRedondeo1;
+        
+        
+        if CalculoMinutos>=60 then
+            miValorEntero=CalculoMinutos/60;
+            miValorDecimal=to_integer(CalculoMinutos)-(to_integer(miValorEntero)*60);
+            --miEstimado=miValorEntero || ':' || miValorDecimal;
+        end if;
+        
+        ValorMinutos=to_integer(ifnull(miValorDecimal,0));
+        
+        miPrueba=ValorMinutos;
+
+        if length(trim(ValorMinutos))=1 then
+            ValorMinutos='0' || trim(ValorMinutos);
+        end if;
+        
+        TiempoRedondeo=to_integer(ifnull(TiempoRedondeo,0))+to_integer(ifnull(miValorEntero,0))+(miHora);
+        
+        if TiempoRedondeo<=0 then
+            Tiempo='0';
+            else
+            Tiempo=TiempoRedondeo;
+        end if;   
+        
+    
+        TiempoPausa=trim(Tiempo) || ':' || trim(ValorMinutos);   
+        
+        else
+        
+        SELECT SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicio),'2021-01-01 ' || trim(HoraFin))  / 3600 ,TO_INTEGER((SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicio),'2021-01-01 ' || trim(HoraFin))  / 3600)) 
+        into TiempoCalculo,TiempoRedondeo
+        FROM DUMMY;
+        
+        CalculoMinutos=(TiempoCalculo-TiempoRedondeo)*60;
+        
+        miPrueba=CalculoMinutos;
+        
+        if CalculoMinutos>=60 then
+            miValorEntero=CalculoMinutos/60;
+            miValorDecimal=to_integer(CalculoMinutos)-(to_integer(miValorEntero)*60);
+        end if;
+        
+        ValorMinutos=to_integer(CalculoMinutos) + to_integer(ifnull(miValorDecimal,0));
+        
+        if length(trim(ValorMinutos))=1 then
+            ValorMinutos='0' || trim(ValorMinutos);
+        end if;
+        
+        TiempoRedondeo=to_integer(ifnull(TiempoRedondeo,0));
+        
+        if TiempoRedondeo<=0 then
+            Tiempo='0';
+            else
+            Tiempo=TiempoRedondeo;
+        end if;   
+        
+    
+        TiempoPausa=trim(Tiempo) || ':' || trim(ValorMinutos);   
+        
+    end if;
+
+
+--miValor=TiempoRedondeo;     
+miValor=TiempoPausa; 
+
+END
+ 
+ 
+ go
+ 
+ Select  days_between('2021-07-01', '2021-07-05') from dummy
+ go
+ Select  WEEKDAY( ADD_DAYS('2021-07-01',1) ) from dummy
+  
+ Select SBO_TEOJAMA_PREPROD_V3.TEO_FunctiongetTiempo('2021-07-10','12:30','2021-07-02','17:00') 
+                from dummy
+                
+GO
+
+SELECT SECONDS_BETWEEN ('2021-01-01 08:00' ,'2021-01-01 10:50')  / 3600 ,to_integer((SECONDS_BETWEEN ('2021-01-01 08:00' ,'2021-01-01 10:50')/3600 )) 
+--        into TiempoCalculo,TiempoRedondeo
+        FROM DUMMY
+     go   
+SELECT SECONDS_BETWEEN ('2021-01-01 17:30' ,'2021-01-01 18:00')  / 3600 ,to_integer((SECONDS_BETWEEN ('2021-01-01 17:30' ,'2021-01-01 18:00')/3600 )) 
+--        into TiempoCalculo,TiempoRedondeo
+        FROM DUMMY
+
+
+Select T2."ItemCode" from  "SBO_TEOJAMA_PREPROD_V3".OINM T2
+          where T2."ItemCode"='04111-7C061'
+          
+              
+ Select DATS_IS_VALID('') 
+ --into bandera
+ FROM DUMMY
+ 
+ Select T2."ItemCode" from  "SBO_TEOJAMA_PREPROD_V3".OITM T2
+          where T2."ItemCode"='04111-7C061'
+               
+           
+
+--REPORTE DE AUDITORIA DE STOCK
+SELECT top 1 round(((SELECT (SUM(Y."TransValue"))  FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate" <='20210713'))/
+((SELECT (SUM(Y."InQty")-SUM(Y."OutQty"))FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate"<='20210713')),2)
+--into v_temp
+FROM "SBO_TEOJAMA_PREPROD_V3".OITM T2
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITW T0 ON T0."ItemCode"=T2."ItemCode"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OWHS T1 ON T1."WhsCode"=T0."WhsCode"
+WHERE (SELECT (SUM(Y."InQty")-SUM(Y."OutQty")) FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y 
+       WHERE Y."ItemCode" = T2."ItemCode" 
+       AND Y."Warehouse" = T1."WhsCode" 
+       AND Y."DocDate"<='20210713') != '0'
+AND T2."ItemCode"='04111-7C061'
+
+

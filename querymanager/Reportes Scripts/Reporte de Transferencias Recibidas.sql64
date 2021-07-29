@@ -1,0 +1,44 @@
+Select PF."CardName",
+PF."DocNum" as NroDocumento,
+PF."DocDate" as FechaSistema,
+PF."DocDueDate" as FechaDeposito,
+PF."TrsfrRef" as NroDeposito,
+OA."AcctName" as Banco,
+--"TrsfrSum" as ValorPagadoDeposito,
+PF."DocTotal" as TotalPagado,
+S."Name" as Sucursal
+from orct PF
+INNER JOIN OACT OA
+ON PF."TrsfrAcct"=OA."AcctCode"
+INNER JOIN SBO_TEOJAMA_PREPROD_V3.OUSR U
+ON U."USERID"=PF."UserSign"
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_SUCURSALES" S
+ON S."Code"=U."Branch"
+where "TrsfrRef" <>''
+and PF."DocDate" between [%0] and [%1]
+
+
+
+
+
+select * from SBO_TEOJAMA_PREPROD_V3.orct PF
+WHERE PF."DocNum"=21000010
+GO
+select * from SBO_TEOJAMA_PREPROD_V3.OACT OA
+WHERE OA."AcctCode"='1011030103'
+
+
+
+GO
+select * from SBO_TEOJAMA_PREPROD_V3.OUSR U
+WHERE U."USERID"=1155
+U."Branch"
+
+
+select * from SBO_TEOJAMA_PREPROD_V3.OUSR U
+
+
+
+
+
+

@@ -1,0 +1,56 @@
+
+
+Select V."Name" as Tipo,
+       F."CardCode" as cedula,
+       F."CardName" as Nombre,
+       F."NumAtCard" as Factura,
+       F."DocDate" as FechaFactura,
+       F."DocDueDate" as FechaVencimiento,
+       F."DocTotal" as TotalFactura,
+       F."PaidSum" as TotalPagado,
+       F."DocTotal"-"PaidSum" as SaldoPendiente,
+       DAYS_BETWEEN ("DocDueDate", CURRENT_DATE) "Dias de diferencia",  
+       --DATEDIFF(DAY, "DocDate", current_date) as Dias,
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) <=0) as "Por Vencer",       
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) between 1 and 30) as "1-30dias",
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) between 31 and 60) as "31-60dias",
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) between 61 and 90) as "61-90dias",
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) between 91 and 120) as "91-120dias",
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) between 121 and 150) as "121-1500dias",
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) between 151 and 180) as "151-180dias",
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) between 181 and 360) as "181-360dias",
+       (Select O."DocTotal"-O."PaidSum" 
+        from "SBO_CAPACITACION_VTAREPUESTO".oinv O
+        where F."DocEntry"=O."DocEntry" 
+        and DAYS_BETWEEN (O."DocDueDate", CURRENT_DATE) >360) as "Mas de 360"
+       
+from "SBO_CAPACITACION_VTAREPUESTO".oinv F
+INNER JOIN SBO_CAPACITACION_VTAREPUESTO."@SYP_TIPOVENTA" V
+ON V."Code"=F."U_SYP_TVENTA"
+where F."DocTotal"-F."PaidSum">0
+and   V."Name" in ('Venta de Repuestos','Venta de Servicios')
+

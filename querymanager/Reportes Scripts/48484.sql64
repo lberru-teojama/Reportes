@@ -1,0 +1,46 @@
+
+
+
+CALL "SBO_TEOJAMA_PREPROD_V3".TEO_SPNotasdeCredito('QUITO','2021-03-17')
+
+
+Alter Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPNotasdeCredito(
+in Sucursal     char(20),
+in fechaini     date
+)
+
+LANGUAGE SQLSCRIPT
+    SQL SECURITY INVOKER 
+as    
+BEGIN 
+
+Select O."DocNum" as Documento,
+       O."CardCode" as Cedula,
+       O."CardName" as Nombre,
+       T."Name" AS TVenta,
+       O."U_SYP_SERIESUC" || '-' || O."U_SYP_MDSD" || '-' || O."U_SYP_MDCD"  as NC,
+       O."DocDate" as Fecha,
+       O."DocTotal" as Total,
+       U."U_NAME" as Usuario
+
+
+
+
+from SBO_TEOJAMA_PREPROD_V3.ORIN O
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_TIPOVENTA" T
+on T."Code"=O."U_SYP_TVENTA"
+inner join SBO_TEOJAMA_PREPROD_V3.OUSR U
+ON U."USERID"=O."UserSign"
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_SUCURSALES" S
+ON S."Code"=O."U_SYP_SUC"
+WHERE O."DocDate"=:fechaini
+and S."Name"=:Sucursal;
+
+end;
+
+
+
+Select S."Code" , S."Name" from SBO_TEOJAMA_PREPROD_V3."@SYP_SUCURSALES" S
+
+
+Select * from SBO_TEOJAMA_PREPROD_V3.ORIN

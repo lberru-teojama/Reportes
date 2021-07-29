@@ -1,0 +1,26 @@
+
+
+
+
+
+Select SUCURSALES."Name" as Sucursal,
+       FACTURA."CardCode" as Cedula,
+       FACTURA."CardName" as Nombre,
+       FACTURA."Address" as Direccion,
+       FACTURA."U_SYP_SERIESUC" || '-' || FACTURA."U_SYP_MDSD" || '-' || FACTURA."U_SYP_MDCD" AS NroFactura,
+       FACTURA."DocDate" as FechaContabilizacion,
+       FACTURA."BaseAmnt" as Subtotal,
+       FACTURA."VatSum" as Iva,
+       FACTURA."DocTotal" as Total
+        
+from SBO_TEOJAMA_PREPROD_V3."OINV" FACTURA
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_TIPOVENTA" TIPO
+on TIPO."Code"=FACTURA."U_SYP_TVENTA"
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_SUCURSALES" SUCURSALES
+on SUCURSALES."Code"=FACTURA."U_SYP_SUC"
+
+WHERE TIPO."Name" in ('Venta de Repuestos','Venta de Servicios')
+and FACTURA."DocDate" between '2020-01-01' and '2021-12-31'
+
+
+

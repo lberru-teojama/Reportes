@@ -1,0 +1,220 @@
+
+
+call "SBO_CAPACITACION_VTAREPUESTO".TEO_SPCierreCaja (1,'2021-02-10')
+GO
+call "SBO_CAPACITACION_VTAREPUESTO".TEO_SPCierreCaja (2,'2021-02-10')
+GO
+call "SBO_CAPACITACION_VTAREPUESTO".TEO_SPCierreCaja (3,'2021-02-10')
+
+
+
+go
+
+
+drop PROCEDURE "SBO_CAPACITACION_VTAREPUESTO".TEO_SPCierreCaja
+go
+CREATE PROCEDURE "SBO_CAPACITACION_VTAREPUESTO".TEO_SPCierreCaja
+(
+in toper        int,
+in fecha        char(10)
+)
+
+LANGUAGE SQLSCRIPT SQL SECURITY DEFINER AS
+BEGIN 
+
+if toper = 1 then
+
+    select 'CHEQUE' AS Tipo2,
+           'REPUESTOS' AS Tipo3,
+            count(*) AS Nro,
+            ifnull(sum(PAGO."CheckSum"),0) AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CheckSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Repuestos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'CHEQUE' AS Tipo2,
+           'SERVICIOS' AS Tipo3,
+            count(*) as Nro,
+            ifnull(sum(PAGO."CheckSum"),0) AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CheckSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Servicios'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'CHEQUE' AS Tipo2,
+           'LETRAS' AS Tipo3,
+            count(*) as Nro,
+            ifnull(sum(PAGO."CheckSum"),0) AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CheckSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Vehículos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'CHEQUE' AS Tipo2,
+           'ANTICIPOS' AS Tipo3,
+            5 as Nro,
+            3225.25 AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CheckSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Repuestos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"    
+    ;
+        
+    
+
+--Select * from "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA"
+
+end if;
+
+
+--SELECT * from "SBO_CAPACITACION_VTAREPUESTO".ORCT
+if toper = 2 then
+
+    select 'EFECTIVO' AS Tipo2,
+           'REPUESTOS' AS Tipo3,
+            count(*) AS Nro,
+            ifnull(sum(PAGO."CheckSum"),0) AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CashSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Repuestos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'EFECTIVO' AS Tipo2,
+           'SERVICIOS' AS Tipo3,
+            count(*) as Nro,
+            ifnull(sum(PAGO."CheckSum"),0) AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CashSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Servicios'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'EFECTIVO' AS Tipo2,
+           'LETRAS' AS Tipo3,
+            count(*) as Nro,
+            ifnull(sum(PAGO."CheckSum"),0) AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CashSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Vehículos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'EFECTIVO' AS Tipo2,
+           'ANTICIPOS' AS Tipo3,
+            3 as Nro,
+            1250 AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CashSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Repuestos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"    
+    ;
+        
+    
+
+--Select * from "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA"
+
+end if;
+
+-- select * from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO 
+ 
+if toper = 3 then
+
+    select 'DEPOSITOS' AS Tipo2,
+           'BANCO PICHINCHA' AS Tipo3,
+            count(*) AS Nro,
+            3500.36 AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CashSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Repuestos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'DEPOSITOS' AS Tipo2,
+           'BANCO PRODUBANCO' AS Tipo3,
+            count(*) as Nro,
+            125.69 AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CashSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Servicios'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'DEPOSITOS' AS Tipo2,
+           'BANCO PACIFICO' AS Tipo3,
+            count(*) as Nro,
+            258.69 AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CashSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Vehículos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"
+    UNION
+    select 'DEPOSITOS' AS Tipo2,
+           'BANCO DEL AUSTRO' AS Tipo3,
+            9 as Nro,
+            1987.66 AS vALOR
+    from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+    "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+    where PAGO."DocDate"=fecha
+    and PAGO."CashSum">0
+    and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+    and TIPO."Name"='Venta de Repuestos'
+    and PAGO."DocEntry" = DETPAGO."DocNum"
+    and FACTURA."DocEntry" = DETPAGO."DocEntry"    
+    ;
+        
+    
+
+--Select * from "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA"
+
+end if;
+
+
+/*
+if toper = 2 then
+
+
+end if;
+*/
+end
+

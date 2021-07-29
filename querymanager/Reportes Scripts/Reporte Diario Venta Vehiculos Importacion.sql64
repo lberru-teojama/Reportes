@@ -1,0 +1,57 @@
+Select * from SBO_TEOJAMA_PREPROD_V3."OINV" FACTURA
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_TIPOVENTA" TIPO
+on TIPO."Code"=FACTURA."U_SYP_TVENTA"
+WHERE TIPO."Name"='Venta de Vehículos'
+
+
+
+
+
+Select FACTURA."CardCode" as Cedula,
+       FACTURA."CardName" as Nombre,
+       FACTURA."Address" as Direccion,
+       FACTURA."U_SYP_SERIESUC" || '-' || FACTURA."U_SYP_MDSD" || '-' || FACTURA."U_SYP_MDCD" AS NroFactura,
+       FACTURA."DocDate" as FechaContabilizacion,
+       DETALLEFACTURA."ItemCode" as Modelo,
+       DETALLEFACTURA."SerialNum" as Chasis,
+       (Select VEHICULO."U_SYP_MOTOR" from SBO_CAPACITACION_CREDITOVTA_V2."OSRN" VEHICULO
+        where VEHICULO."ItemCode"=DETALLEFACTURA."ItemCode"
+        and   VEHICULO."DistNumber"=DETALLEFACTURA."SerialNum") as Motor,
+       (Select VEHICULO."U_SYP_RAMV" from SBO_CAPACITACION_CREDITOVTA_V2."OSRN" VEHICULO
+        where VEHICULO."ItemCode"=DETALLEFACTURA."ItemCode"
+        and   VEHICULO."DistNumber"=DETALLEFACTURA."SerialNum") as Ramv,
+
+       (Select VENDEDOR."SlpName" from SBO_CAPACITACION_CREDITOVTA_V2."OSLP" VENDEDOR
+        where VENDEDOR."SlpCode"=FACTURA."SlpCode") as Vendedor,
+        DETALLEFACTURA."U_SYP_NOMBOD" as Sucursal,
+       (Select CLIENTE."Phone1" from SBO_CAPACITACION_CREDITOVTA_V2."OCRD" CLIENTE
+        where CLIENTE."CardCode"=FACTURA."CardCode") as Telefono1,
+       (Select CLIENTE."Phone2" from SBO_CAPACITACION_CREDITOVTA_V2."OCRD" CLIENTE
+        where CLIENTE."CardCode"=FACTURA."CardCode") as Telefono2,
+        FACTURA."U_SYP_NROAUTO" as NroAutorizacion,
+        'NO SE TIENE POR EL MOMENTO CAE' AS Cae
+from SBO_CAPACITACION_CREDITOVTA_V2."OINV" FACTURA
+inner join SBO_CAPACITACION_CREDITOVTA_V2."@SYP_TIPOVENTA" TIPO
+on TIPO."Code"=FACTURA."U_SYP_TVENTA"
+inner join SBO_CAPACITACION_CREDITOVTA_V2."INV1" DETALLEFACTURA
+on DETALLEFACTURA."DocEntry"=FACTURA."DocEntry"
+WHERE TIPO."Name"='Venta de Vehículos'
+and FACTURA."DocDate" between '2020-01-01' and '2021-12-31'
+
+
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V2."OINV"
+
+Select * from SBO_CAPACITACION_CREDITOVTA_V2."@SYP_TIPOVENTA" TIPO
+
+
+
+Select * from SBO_TEOJAMA_PREPROD_V3."INV1" DETALLEFACTURA
+where "DocEntry"=81
+go
+Select * from SBO_TEOJAMA_PREPROD_V3."OINV" FACTURA
+where "DocNum"=21000050
+GO
+
+
+

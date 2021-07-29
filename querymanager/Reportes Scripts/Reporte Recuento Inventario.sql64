@@ -1,0 +1,111 @@
+
+Drop Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPRecuentoInventario
+go
+
+Create Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPRecuentoInventario(
+in Documento    int
+--OUT TMP         "SBO_TEOJAMA_PREPROD_V3".TEOCARTERATYPE
+)
+
+LANGUAGE SQLSCRIPT
+    SQL SECURITY INVOKER 
+as    
+BEGIN 
+
+DECLARE Modelo              varchar(30)='';
+declare Precio              decimal(12,2)=0;
+declare TotalLinea          decimal(12,2)=0;
+declare Pedido              bigint=0;
+declare Cantidad            int=0;
+declare FechaFactura        date;
+declare FechaVencimiento    date;
+declare NroMeses            int;
+declare NroDias             int;
+declare Estado              varchar(20);
+declare miFactura           char(20);
+declare Bandera             int;
+
+Select A."CountDate", 
+    A."DocNum" AS PEDIDO,
+    B."ItemCode" AS ITEM, 
+    B."ItemDesc" AS DESCRIPCION,
+    B."WhsCode" AS BODEGA,
+    B."InWhsQty" AS CANT_PEDIDO,
+    B."CountQty" AS CANT_INGRESADA,
+    B."Difference" AS DIFERENCIA,
+    SBO_TEOJAMA_PREPROD_V3.TEO_FunctiongetCosto(B."ItemCode",'') AS COSTO
+    --COSTO*B."Difference"
+from  SBO_TEOJAMA_PREPROD_V3.OINC A, SBO_TEOJAMA_PREPROD_V3.inc1 B
+where A."DocEntry"=b."DocEntry"
+and A."DocNum"=:Documento;
+
+end;
+
+go
+
+call "SBO_TEOJAMA_PREPROD_V3".TEO_SPRecuentoInventario(21000001)
+
+SELECT A."DocNum" FROM OINC A
+
+Select A."CountDate", 
+    A."DocNum" AS PEDIDO,
+    B."ItemCode" AS ITEM, 
+    B."ItemDesc" AS DESCRIPCION,
+    B."WhsCode" AS BODEGA,
+    B."InWhsQty" AS CANT_PEDIDO,
+    B."CountQty" AS CANT_INGRESADA,
+    B."Difference" AS DIFERENCIA,
+    SBO_TEOJAMA_PREPROD_V3.TEO_FunctiongetCosto('04111-7C061','')  as costo
+from  SBO_TEOJAMA_PREPROD_V3.OINC A, SBO_TEOJAMA_PREPROD_V3.inc1 B
+where A."DocEntry"=b."DocEntry"
+and A."DocNum"=21000001
+
+
+
+04042-1082P
+04043-1038P
+04043-1059P
+04043-1060P
+04111-78080
+04111-78081
+04111-78082
+04111-78F20
+04111-7C060-
+04111-7C061
+
+--REPORTE DE AUDITORIA DE STOCK
+
+SELECT T2."ItemCode",
+       T2."ItemName",
+       T1."WhsCode",
+       T1."WhsName",
+(SELECT (SUM(Y."InQty")-SUM(Y."OutQty"))FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate"<='20210712') "Stock",
+(SELECT (SUM(Y."TransValue"))  FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate" <='20210712') "CostoTotal",
+round(((SELECT (SUM(Y."TransValue"))  FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate" <='20210712'))/
+((SELECT (SUM(Y."InQty")-SUM(Y."OutQty"))FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate"<='20210712')),2) AS CostoPromedio
+
+FROM "SBO_TEOJAMA_PREPROD_V3".OITM T2
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITW T0 ON T0."ItemCode"=T2."ItemCode"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OWHS T1 ON T1."WhsCode"=T0."WhsCode"
+WHERE (SELECT (SUM(Y."InQty")-SUM(Y."OutQty")) FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y 
+       WHERE Y."ItemCode" = T2."ItemCode" 
+       AND Y."Warehouse" = T1."WhsCode" 
+       AND Y."DocDate"<='20210712') != '0'
+AND T2."ItemCode"='1780158030000'       
+ORDER BY "ItemCode"       
+
+
+select * from SBO_TEOJAMA_PREPROD_V3.OINM A
+where "ItemCode"='1780158030000'
+
+
+
+select * from SBO_TEOJAMA_PREPROD_V3.OINv A
+where "DocNum"=21000585
+
+go
+select * from SBO_TEOJAMA_PREPROD_V3.INV1 A
+where "DocEntry"=1050
+
+
+

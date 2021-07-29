@@ -1,0 +1,273 @@
+oinv  ='FACTURA'
+orct  ='PAGO RECIBIDO'
+rct1  ='CHEQUE'
+
+
+
+select * from "SBO_CAPACITACION_VTAREPUESTO".oinv ,"SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA"
+WHERE "DocNum"=21000051
+and "U_SYP_TVENTA"="Code"
+
+
+GO
+
+
+select * from "SBO_CAPACITACION_VTAREPUESTO".oqut
+
+
+select * from "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA"
+
+
+
+
+select RC."CheckSum",
+       RC."BankCode",
+       RC."AcctNum",
+       RC."CheckSum"
+from "SBO_CAPACITACION_VTAREPUESTO".rct1 RC
+
+
+
+
+
+select * from "SBO_CAPACITACION_VTAREPUESTO"."CUFD"
+WHERE "AliasID"='SYP_TIPCOMPRA'
+AND  "TableID"='OQUT'
+
+
+
+
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO"."CUFD" UF
+inner join "SBO_CAPACITACION_VTAREPUESTO"."UFD1" UF1 ON
+UF."FieldID"=UF1."FieldID" 
+Where UF."TableID"='OQUT'
+and UF."AliasID"='SYP_TIPCOMPRA'
+and UF1."TableID"='OQUT'
+
+
+---FACTURA DE RESERVA CON PAGO RELACIONADO
+Select * 
+from "SBO_CAPACITACION_VTAREPUESTO".orct PAGO ,"SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO , "SBO_CAPACITACION_VTAREPUESTO".OINV FACTURA
+where PAGO."DocDate" BETWEEN '2021-02-10' AND '2021-02-10'
+and PAGO."DocEntry" = DETPAGO."DocNum"
+and FACTURA."DocEntry" = DETPAGO."DocEntry"
+
+291	21000105
+
+---TABLA CHEQUES
+Select * from "SBO_CAPACITACION_VTAREPUESTO".rct1 CHEQUE
+where CHEQUE."DocNum"=312
+go
+select * from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO
+where PAGO."DocDate"='2021-02-10'
+and PAGO."CheckSum">0
+go
+select * from "SBO_CAPACITACION_VTAREPUESTO".RCT2 detPAGO
+where DETPAGO."DocNum"=291
+
+
+
+---verifico el cheque  grabo cheque 
+select 'CHEQUE' AS tIPO2,
+       count(*),
+       sum(PAGO."CheckSum") AS vALOR
+from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+     "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+
+where PAGO."DocDate"='2021-03-02'
+--and PAGO."DocEntry" = DETPAGO."DocNum"
+--and CHEQUE."DocNum"=PAGO."DocEntry"
+and PAGO."CheckSum">0
+--and PAGO."CheckSum"=DETPAGO."SumApplied"
+and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+and TIPO."Name"='Venta de Repuestos'
+and PAGO."DocEntry" = DETPAGO."DocNum"
+and FACTURA."DocEntry" = DETPAGO."DocEntry"
+
+
+
+
+--PAGOS RECIBIDOS DEL 10/02/2021
+Select PAGO."DocNum" as Ingreso,
+       PAGO."CardCode" as Cliente,
+       PAGO."CardName" as Nombre,
+       PAGO."CheckSum" as ValorCheque,
+       FACTURA."DocNum" as Factura
+       
+      -- DETPAGO."SumApplied" as ValorPagado
+      -- CHEQUE."CheckSum" as ValorCheque
+
+from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+     "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+
+where PAGO."DocDate"='2021-02-10'
+--and PAGO."DocEntry" = DETPAGO."DocNum"
+--and CHEQUE."DocNum"=PAGO."DocEntry"
+and PAGO."CheckSum">0
+and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+and TIPO."Name"='Venta de Repuestos'
+and PAGO."DocEntry" = DETPAGO."DocNum"
+and FACTURA."DocEntry" = DETPAGO."DocEntry"
+
+
+
+
+
+Select PAGO."DocNum" as Ingreso,
+       PAGO."CardCode" as Cliente,
+       PAGO."CardName" as Nombre,
+       PAGO."CheckSum" as ValorCheque,
+       FACTURA."DocNum" as Factura
+      -- DETPAGO."SumApplied" as ValorPagado
+      -- CHEQUE."CheckSum" as ValorCheque
+
+from "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,"SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , 
+     "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO , "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+
+where PAGO."DocDate"='2021-02-10'
+--and PAGO."DocEntry" = DETPAGO."DocNum"
+--and CHEQUE."DocNum"=PAGO."DocEntry"
+and PAGO."CheckSum">0
+and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+and TIPO."Name"='Venta de Repuestos'
+and PAGO."DocEntry" = DETPAGO."DocNum"
+and FACTURA."DocEntry" = DETPAGO."DocEntry"
+
+
+---CON GROUP BY
+
+Select FACTURA."DocNum" , TIPO."Name", sum(FACTURA."DocTotal")
+from "SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO 
+where FACTURA."DocNum"=21000035
+and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+and TIPO."Name"='Venta de Repuestos'
+group by FACTURA."DocNum", TIPO."Name"
+
+
+
+
+Select FACTURA."DocNum" , TIPO."Name", FACTURA."DocTotal"--,sum(PAGO."CheckSum")
+from "SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO,
+     "SBO_CAPACITACION_VTAREPUESTO".ORCT PAGO  ,  "SBO_CAPACITACION_VTAREPUESTO".RCT2 DETPAGO
+where FACTURA."DocNum"=21000035
+and PAGO."DocEntry" = DETPAGO."DocNum"
+and FACTURA."DocEntry" = DETPAGO."DocEntry"
+and PAGO."CheckSum">0
+group by FACTURA."DocNum", TIPO."Name"
+
+
+FROM "SBO_CAPACITACION_VTAREPUESTO".OINV T2
+LEFT JOIN "SBO_CAPACITACION_VTAREPUESTO".RCT2 T1 ON T1."DocEntry" = T2."DocEntry"
+INNER JOIN "SBO_CAPACITACION_VTAREPUESTO".ORCT T0 ON T0."DocEntry" = T1."DocNum"
+INNER JOIN "SBO_CAPACITACION_VTAREPUESTO".OCRD T3 ON T0."CardCode" = T3."CardCode"
+WHERE T0."DocDate" ='2021-02-04'
+and T1."InvType" = '13'
+order by T2."DocNum"
+
+
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO".oinv FACTURA , "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA" TIPO 
+where FACTURA."DocNum"=21000035
+and TIPO."Code"=FACTURA."U_SYP_TVENTA"
+and TIPO."Name"='Venta de Repuestos'
+
+
+select * from "SBO_CAPACITACION_VTAREPUESTO"."@SYP_TIPOVENTA"
+
+
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO".UF_F_AUT
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO".RCT2
+where  "DocNum"=291
+go
+Select * from "SBO_CAPACITACION_VTAREPUESTO".rct1
+where "DocNum"=291
+go
+Select *
+from "SBO_CAPACITACION_VTAREPUESTO".orct
+where "CardCode"='C0100032770001'
+
+go
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO".ODPI T3
+
+
+291
+
+
+
+SELECT
+T2."DocNum" as nrofactura,
+T0."CardCode" as CodigoCliente,
+T0."CardName" as NombreCliente,
+T2."DocTotal" as Totalfactura,
+T0."DocNum" as CodigodelPago,
+T1."SumApplied" as totalpago,
+--saldofac= case
+--when T2."Doctotal"-T1."SumApplied"= '0' then '0'
+--when T2."Doctotal"-T1."SumApplied"<> '0' then T2."Doctotal"-T2."PaidToDate" end,
+T2."DocDate" as Fechafactura,
+T2."DocDueDate" as FechaVencimiento,
+T0."DocDate" as FechaPago,
+T0."CashSum" as Efectivo,
+T0."CheckSum" as Cheque,
+T0."CreditSum" as TarjetaCredito,
+T0."TrsfrSum" as Transferencia
+
+--RefPago=case
+--When T0."CashSum" ='0' Then 'Efectivo'
+--When T0."CheckSum" ='0' Then 'Cheque'
+--When T0."CreditSum" ='0' Then 'TC'
+--When T0."TrsfrSum" ='0' Then 'TransFerencia'end,
+--'condicion de pago' = case
+--When T3."GroupNum" = '1' Then '30 dias'
+--When T3."GroupNum" = '9' Then '45 dias'
+--When T3."GroupNum" = '8' Then 'contado'
+-- When T3."GroupNum" = '10' Then '15 dias'
+-- When T3."GroupNum" = '11' Then '21 dias'
+-- When T3."GroupNum" = '12' Then '8 dias'
+-- When T3."GroupNum" = '13' Then '5 dias'
+-- When T3."GroupNum" = '14' Then '90 dias'
+-- When T3."GroupNum" = '15' Then '60 dias'end,
+-- 'DifPago'= case
+-- 
+-- When T3."GroupNum" = '1' Then datediff (day,T2."DocDate",T0."DocDate")
+-- When T3."GroupNum" = '9' Then datediff (day,T2."DocDate",T0."DocDate")
+-- When T3."GroupNum" = '8' Then datediff (day,T2."DocDate",T0."DocDate")
+-- When T3."GroupNum" = '10' Then datediff (day,T2."DocDate",T0."DocDate")
+-- When T3."GroupNum" = '11' Then datediff (day,T2."DocDate",T0."DocDate")
+-- When T3."GroupNum" = '12' Then datediff (day,T2."DocDate",T0."DocDate")
+-- When T3."GroupNum" = '13' Then datediff (day,T2."DocDate",T0."DocDate")
+-- When T3."GroupNum" = '14' Then datediff (day,T2."DocDate",T0."DocDate")
+-- When T3."GroupNum" = '15' Then datediff (day,T2."DocDate",T0."DocDate")
+-- end
+FROM "SBO_CAPACITACION_VTAREPUESTO".OINV T2
+LEFT JOIN "SBO_CAPACITACION_VTAREPUESTO".RCT2 T1 ON T1."DocEntry" = T2."DocEntry"
+INNER JOIN "SBO_CAPACITACION_VTAREPUESTO".ORCT T0 ON T0."DocEntry" = T1."DocNum"
+INNER JOIN "SBO_CAPACITACION_VTAREPUESTO".OCRD T3 ON T0."CardCode" = T3."CardCode"
+WHERE T0."DocDate" ='2021-02-10'
+and T1."InvType" = '13'
+order by T2."DocNum"
+
+
+select * from "SBO_CAPACITACION_VTAREPUESTO".OCRD
+
+
+
+
+
+
+
+SELECT T1."CardCode",
+       T1."CardName",
+       T0."DocNum",
+       T1."DocDate" ,
+       T2."DocNum",
+       T2."DueDate",
+       T2."CheckNum",
+       T2."CheckSum"
+FROM "SBO_CAPACITACION_VTAREPUESTO".OINV T0 INNER JOIN "SBO_CAPACITACION_VTAREPUESTO".ORCT T1 ON T0."ReceiptNum" = T1."DocEntry"
+ INNER JOIN "SBO_CAPACITACION_VTAREPUESTO".RCT1 T2 ON T1."DocNum" = T2."DocNum"
+ 

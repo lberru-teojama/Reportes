@@ -1,0 +1,291 @@
+
+
+
+
+ALTER Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPEstadoCuentaRepSer(
+in Documento    char(20)
+--OUT TMP         "SBO_TEOJAMA_PREPROD_V3".TEOCARTERATYPE
+)
+
+LANGUAGE SQLSCRIPT
+    SQL SECURITY INVOKER 
+as    
+BEGIN 
+
+DECLARE Modelo              varchar(30)='';
+declare Precio              decimal(12,2)=0;
+declare TotalLinea          decimal(12,2)=0;
+declare Pedido              bigint=0;
+declare Cantidad            int=0;
+declare FechaFactura        date;
+declare FechaVencimiento    date;
+declare NroMeses            int;
+declare NroDias             int;
+declare Estado              varchar(20);
+declare miFactura           char(20);
+declare Bandera             int;
+
+--ESTADO DE CUENTA DE REPUESTOS Y SERVICIOS
+Select FACTURA."DocNum" ,
+       FACTURA."CardCode",
+       FACTURA."CardName",
+       FACTURA."U_SYP_SERIESUC" || '-' || FACTURA."U_SYP_MDSD" || '-' || FACTURA."U_SYP_MDCD" AS Factura,
+       FACTURA."DocTotal",
+       FACTURA."DocDate" as FechaFactura,
+       FACTURA."DocDueDate" as  FechaVencimiento,
+       PAGO."DocNum" as Ingreso,
+       PAGO."DocDate" as FechaPago,
+       PAGO."DocTotal" as ValorPago,
+       case when FACTURA."DocTotal"-FACTURA."PaidToDate">0 then 'PENDIENTE'
+            when FACTURA."DocTotal"-FACTURA."PaidToDate"=0 then 'CANCELADO'
+       end as Estado,
+       
+       case when PAGO."CashSum">0 then 'EFECTIVO: ' || cast(PAGO."CashSum" as decimal(12,2))
+       end as FormaPago,
+       case when PAGO."CheckSum">0 then 'PAGO A CUENTA: ' || cast(PAGO."CheckSum" as decimal(12,2))
+       end as FormaPago2,
+       case when PAGO."TrsfrSum">0 then 'DEPOSITO: ' || cast(PAGO."TrsfrSum" as decimal(12,2))
+       end as FormaPago3
+       
+from "SBO_TEOJAMA_PREPROD_V3".oinv FACTURA
+LEFT JOIN "SBO_TEOJAMA_PREPROD_V3".RCT2 DETALLEPAGO
+ON FACTURA."DocEntry"=DETALLEPAGO."DocEntry"
+LEFT JOIN "SBO_TEOJAMA_PREPROD_V3".orct PAGO
+ON PAGO."DocEntry"=DETALLEPAGO."DocNum"
+where FACTURA."CardCode"=substring(trim(:Documento),2,17);
+
+end;
+
+
+go
+call "SBO_TEOJAMA_PREPROD_V3".TEO_SPEstadoCuentaRepSer(21000001)
+
+Select * from "SBO_TEOJAMA_PREPROD_V3".oinv
+where "CardCode" in ('C0100067271','C0100092782')
+
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".IGN1
+WHERE "ItemCode"='15613-E0110'
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".orct
+where "DocEntry"=39
+
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".oiTM
+WHERE "ItemCode"='15613-E0110'
+go
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".oiTW
+WHERE "ItemCode"='15613-E0110'
+go
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".OINM
+WHERE "Code"='0411156043000'
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".QUT1
+WHERE "Price"=146.50
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".OMRC
+WHERE "Price"=146.50
+
+GO
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".ITM1 
+WHERE "ItemCode" IN ('15613-E0110','0411156043000')
+
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".OPLN 
+WHERE "ItemCode" IN ('15613-E0110','0411156043000')
+go
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".PDN1 
+go
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".WTQ1 
+
+go
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".OINM
+GO
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".DV201903023931ZHAKCUSI7Q05TR57Q3
+WHERE "ItemCode" IN ('15613-E0110','0411156043000')
+
+
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".MRV1
+
+Select A."ItemCode",A."AvgPrice",A."WhsCode",'' as "Serie", B."U_SYP_OBSOLETO" from "SBO_TEOJAMA_PREPROD_V3".OITW  A 
+		INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITM B ON A."ItemCode"=B."ItemCode"
+		where A."ItemCode" IN ('15613-E0110','0411156043000')
+		
+		and A."WhsCode"=:almacen
+
+"INC1" "T1" LEFT JOIN "OBIN" "T2"
+
+
+OMRV y MRV1 que son las tablas de revalorización de inventario pero no logro sacar el costo estándar ya que el costo estándar del producto puede cambiarse varias veces.
+
+
+SELECT T0.[ItemCode], T0.[ItemName], T0.[AvgPrice], T1.[Price], (T0.[AvgPrice] - T1.[Price]) [Dif] 
+FROM OITM T0 
+INNER JOIN ITM1 T1 
+ON T0.ItemCode = T1.ItemCode 
+INNER JOIN OPLN T2 
+ON T1.PriceList = T2.ListNum 
+WHERE T0.[PlaningSys] = 'M' and T0.[PrcrmntMtd] = 'M' and T2.[ListName] = [%0]
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".oiT2
+WHERE "ItemCode"='15613-E0110'
+
+
+Select *
+from "SBO_TEOJAMA_PREPROD_V3".OITB 
+
+
+
+"MPCA_Prod"."dbo"."IBT1" "IBT1" INNER JOIN "MPCA_Prod"."dbo"."OITM" "OITM" ON "IBT1"."ItemCode"="OITM"."ItemCode") INNER JOIN "MPCA_Prod"."dbo"."OWHS" "OWHS" ON "IBT1"."WhsCode"="OWHS"."WhsCode") INNER JOIN "MPCA_Prod"."dbo"."OITB" "OITB" ON "OITM"."ItmsGrpCod"="OITB"."ItmsGrpCod"
+
+SELECT T3.FirmCode, T3.FirmName, SUM(T1.Quantity) as 'Cantidades', AVG(T1.Price) as 'Precio Venta Promedio', AVG(T1.StockPrice) as 'Costo Promedio', SUM(T1.LineTotal) as 'Venta Neta', AVG((1-((T1.Quantity*T1.StockPrice)/T1.LineTotal))*100) as 'Margen Almacen 221'
+FROM OINV T0  INNER JOIN INV1 T1 ON T0.DocEntry = T1.DocEntry  INNER JOIN OITM T2 ON T2.ItemCode = T1.ItemCode LEFT OUTER JOIN OMRC T3 ON T3.FirmCode = T2.FirmCode
+WHERE T0.DocDate >= '[%0]' and T0.DocDate <= '[%1]'  and ISNULL(T0.Indicator,'') <> 'NL' and T0.DocType ='I' and T1.WhsCode ='221'
+GROUP BY T3.FirmCode, T3.FirmName
+ORDER BY T3.FirmName
+
+
+
+select * from "SBO_TEOJAMA_PREPROD_V3".OINM
+
+
+SELECT T0."ItemCode", T0."Dscription", SUM(T0."TransValue") / (CASE WHEN SUM(T0."InQty") - SUM (T0."OutQty") <> 0 THEN SUM(T0."InQty") - SUM (T0."OutQty") ELSE 1 END  ) "Costo Promedio" 
+FROM "SBO_TEOJAMA_PREPROD_V3".OINM T0  
+WHERE T0."ItemCode" IN ('15613-E0110','0411156043000')
+GROUP BY T0."ItemCode", T0."Dscription"
+
+
+SELECT T0."WhsCode", 
+       T2."WhsName",
+       T0."ItemCode",
+       T1."ItemName",
+       ROUND(SUM(CASE M."InQty" WHEN 0 THEN -1*M."CalcPrice"*M."OutQty" 
+       ELSE M."CalcPrice"*M."InQty" END),2) AS Valor,
+       SUM(M."InQty")-SUM(M."OutQty") AS Stock,
+       ROUND(ROUND(SUM(CASE M."InQty" WHEN 0 THEN -1*M."CalcPrice"*M."OutQty" 
+       ELSE M."CalcPrice"*M."InQty" END),2)/(SUM(M."InQty")-SUM(M."OutQty")),2) AS PMP
+FROM "SBO_TEOJAMA_PREPROD_V3".OINM M
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITW T0 ON M."ItemCode"=T0."ItemCode" AND M."Warehouse"=T0."WhsCode"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITM T1 ON T0."ItemCode" = T1."ItemCode"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OWHS T2 ON T0."WhsCode" = T2."WhsCode"
+WHERE M."ItemCode" IN ('15613-E0110','0411156043000')
+GROUP BY T0."WhsCode", T2."WhsName", T0."ItemCode", T1."ItemName"
+
+ORDER BY T0.[WhsCode], T0.[ItemCode]
+
+OINM
+
+select * from "SBO_TEOJAMA_PREPROD_V3".OINM
+WHERE "ItemCode" IN ('15613-E0110','0411156043000')
+
+GO
+select "ItemCode","SBO_TEOJAMA_PREPROD_V3".SYP_CostoItem ('15613-E0110','01A','','A') from "SBO_TEOJAMA_PREPROD_V3".OITM
+WHERE "ItemCode" IN ('15613-E0110','0411156043000')
+GO
+
+SELECT * FROM "SBO_TEOJAMA_PREPROD_V3".SYP_CostoItem ('15613-E0110','01A','','A')
+
+
+Select A."ItemCode",A."AvgPrice",A."WhsCode",'' as "Serie", B."U_SYP_OBSOLETO" from "SBO_TEOJAMA_PREPROD_V3".OITW  A 
+		INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITM B ON A."ItemCode"=B."ItemCode"
+		where A."ItemCode"  IN ('S1510-11591','0411156043000')
+		and A."WhsCode"='01A'
+		
+ Select B."ItemCode", ifnull(A."CostTotal",0) as  "AvgPrice", '' as "WhsCode" ,
+							ifnull(A."DistNumber",'')  as "Serie", B."U_SYP_OBSOLETO" from "SBO_TEOJAMA_PREPROD_V3".OSRN  A 
+							RIGHT join "SBO_TEOJAMA_PREPROD_V3".OITM B on A."ItemCode"=B."ItemCode"
+						    where B."ItemCode" IN ('15613-E0110','0411156043000')
+
+
+Select B."ItemCode", ifnull(A."CostTotal",0) as  "AvgPrice", '' as "WhsCode" ,
+							ifnull(A."DistNumber",'')  as "Serie", B."U_SYP_OBSOLETO" from "SBO_TEOJAMA_PREPROD_V3".OSRN  A 
+							RIGHT join "SBO_TEOJAMA_PREPROD_V3".OITM B on A."ItemCode"=B."ItemCode"
+						    where B."ItemCode" IN ('15613-E0110','0411156043000')
+						    
+						    and A."DistNumber"=:serie
+
+SELECT * FROM "SBO_TEOJAMA_PREPROD_V3".ES_ITEM
+WHERE "OITM_ItemCode" in ('15613-E0110','0411156043000')
+
+FUNCTION "SYP_CostoItem" 
+
+
+        fromStr := ' FROM INC1 T0 join OINC T1 on T0."DocEntry" = T1."DocEntry" left outer join OBIN T2 on T0."BinEntry = T2."AbsEntry"';
+        whereStr := :whereCommon;
+
+
+
+SELECT * FROM "SBO_TEOJAMA_PREPROD_V3".OITW
+WHERE  "ItemCode"='S1510-11591'
+go
+SELECT * FROM "SBO_TEOJAMA_PREPROD_V3".OITM
+WHERE  "ItemCode"='S1510-11591'
+
+
+
+GO
+SELECT * FROM "SBO_TEOJAMA_PREPROD_V3".INMPRICE
+
+
+
+
+select TT0."ItemCode" as "Número de artículo", TT0."ItemName" as "Nombre de artículo", TT0."Date" as "Fecha", IFNULL(TT1."DocDate", TT0."Date") as "Fecha de contabilización", IFNULL(TT1."Close Balance", 0) as "Valor de stocks" from ( SELECT T0."DATE_SQL" AS "Date", T1."ItemCode", T1."ItemName" from ( SELECT "DATE_SQL" FROM "_SYS_BI"."M_TIME_DIMENSION" T0 WHERE "DATE_SQL" in (LAST_DAY(CURRENT_DATE), LAST_DAY(ADD_MONTHS(CURRENT_DATE, -1)), LAST_DAY(ADD_MONTHS(CURRENT_DATE, -2)), LAST_DAY(ADD_MONTHS(CURRENT_DATE, -3)), LAST_DAY(ADD_MONTHS(CURRENT_DATE, -4)), LAST_DAY(ADD_MONTHS(CURRENT_DATE, -5))) ) T0 LEFT OUTER JOIN OITM T1 on T1."InvntItem" = 'Y' ) TT0 left outer join ( select T0."TransSeq", T0."DocDate", T0."ItemCode", T1."TransValue" as "Close Balance" from OIVL T0 inner join IVL1 T1 on T0."TransSeq" = T1."TransSeq" and T0."DocDate" <= LAST_DAY(CURRENT_DATE) ) TT1 on TT0."ItemCode" = TT1."ItemCode" and TT0."Date" >= TT1."DocDate"
+
+
+
+select * from "SBO_TEOJAMA_PREPROD_V3".WTR1
+
+
+
+
+
+--- REPORTE DE AUDITORIA DE STOCK
+set @fecha = '20160331'
+set @itemcode = '0101002176'
+
+SELECT T2."ItemCode",
+       T2."ItemName",
+       T1."WhsCode",
+       T1."WhsName",
+(SELECT (SUM(Y."InQty")-SUM(Y."OutQty"))FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate"<='20210623') "Stock",
+(SELECT (SUM(Y."TransValue"))  FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y WHERE Y."ItemCode" = T2."ItemCode" AND Y."Warehouse" = T1."WhsCode" AND Y."DocDate" <='20210623') "CostoTotal"
+FROM "SBO_TEOJAMA_PREPROD_V3".OITM T2
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OITW T0 ON T0."ItemCode"=T2."ItemCode"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".OWHS T1 ON T1."WhsCode"=T0."WhsCode"
+WHERE (SELECT (SUM(Y."InQty")-SUM(Y."OutQty")) FROM "SBO_TEOJAMA_PREPROD_V3".OINM Y 
+       WHERE Y."ItemCode" = T2."ItemCode" 
+       AND Y."Warehouse" = T1."WhsCode" 
+       AND Y."DocDate"<='20210623') != '0'
+       --AND T0."WhsCode"='AGDL' 
+       
+       
+   --    And t2."ItemCode" = 'S1510-11591'
+       
+      ORDER BY T2."ItemCode", T1."WhsCode"
+
+
+
+select * from "SBO_TEOJAMA_PREPROD_V3".DLN1
+where "ItemCode"='04111-7C061'
+go
+select * from "SBO_TEOJAMA_PREPROD_V3".OBVL
+where "ItemCode"='04111-7C061'
+
+
+

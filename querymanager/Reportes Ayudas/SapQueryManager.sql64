@@ -1,0 +1,248 @@
+
+--PAGOS A FACTURAS---
+Select * from "SBO_CAPACITACION_VTAREPUESTO".orct
+where "CardCode"='C00369522'
+and  "DocNum" in ('21000028','21000001','21000002','21000003','21000004','21000005','21000013')
+
+
+go
+
+
+--FACTURA
+Select * from "SBO_CAPACITACION_VTAREPUESTO".oinv
+where "CardCode"='C00369522'
+
+go
+Select * from "SBO_CAPACITACION_VTAREPUESTO".oin1
+
+---FORMA DE PAGO CHEQUE (Listado de Cheques LB)
+Select C."CheckNum" as NroCheque,
+C."AcctNum" as NroCuenta,
+B."BankName" as Banco,
+C."DueDate" as Fecha,
+C."CheckSum" as Valor,
+PF."DocNum" as NroIngreso,
+PF."CardName" as Nombre
+from "SBO_CAPACITACION_VTAREPUESTO".rct1 C,"SBO_CAPACITACION_VTAREPUESTO".ODSC B , "SBO_CAPACITACION_VTAREPUESTO".orct PF
+where C."BankCode"=B."BankCode"
+and PF."DocEntry"=C."DocNum"
+and C."DueDate" between '2020-01-01' and '2021-01-31'
+
+
+--DETALLE DE PAGOS
+
+
+
+--TRANSFERENCIAS DEL DIA  (LISTADO DE INGRESOS LB)
+Select "CardName",
+"DocNum" as NroDocumento,
+"DocDate" as FechaSistema,
+"DocDueDate" as FechaDeposito,
+"TrsfrRef" as NroDeposito,
+"TrsfrSum" as ValorPagadoDeposito,
+"DocTotal" as TotalPagado
+from "SBO_CAPACITACION_VTAREPUESTO".orct PF
+where "CardCode"='C00369522'
+and  "TrsfrRef" <>''
+and PF."DocDate" between '2021-01-01' and '2021-01-31'
+
+
+
+--FACTURAS PENDIENTES POR PAGAR
+Select "CardCode" as cedula,
+       "CardName" as Nombre,
+       "NumAtCard" as Factura,
+       "DocDate" as FechaFactura,
+       "DocTotal" as TotalFactura,
+       "PaidSum" as TotalPagado,
+       "DocTotal"-"PaidSum" as SaldoPendiente
+from "SBO_CAPACITACION_VTAREPUESTO".oinv
+where "CardCode"='C00369522'
+and "DocTotal"-"PaidSum">0
+
+
+
+
+
+
+--DETALLE DE PAGOS
+Select * from "SBO_CAPACITACION_VTAREPUESTO".RCT2
+where  "DocEntry"=44
+go
+Select *
+from "SBO_CAPACITACION_VTAREPUESTO".orct
+where "CardCode"='C00369522'
+
+
+
+
+--EN LA FACTURA EL CAMPO PaidSum y el campo PaidSumSC ,PaidSys  =suma lo pagado
+--EN LA FACTURA EL CAMPO DocTotal  = Total de la factura
+
+
+--EN PAGOS A FACTURA  EL CAMPO DocTotal   =valor pagado
+--EN LA FACTURA EL CAMPO DocTotal  = Total de la factura
+
+
+and  "TrsfrRef" <>''
+and "DocDate"=CURRENT_DATE
+
+
+
+44	21000002
+
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO".oinv
+where "CardCode"='C00369522'
+
+
+
+
+---TRANSFERENCIAS DEL DIA
+Select *
+from "SBO_CAPACITACION_VTAREPUESTO".orct
+where "CardCode"='C00369522'
+and  "TrsfrRef" <>''
+
+
+
+
+
+---PRUEBAS
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO".RCT2
+where  "DocEntry"=78
+
+
+GO
+
+Select * from "SBO_CAPACITACION_VTAREPUESTO".rct1
+where  "DocNum"=176
+
+GO
+--PAGOS DE FACTURAS
+Select * from "SBO_CAPACITACION_VTAREPUESTO".orct
+where "DocEntry"='176'
+
+
+and  "DocNum" in ('21000028','21000001','21000002','21000003','21000004','21000005','21000013')
+
+--CONSULTA DE PRUEBA SAP  --PAGOS
+SELECT T0."DocNum" "No RC", T0."DocDate" "Fecha Pago", T4."DocNum" "No Factura", 
+T0."CardCode", T0."CardName", T1."SumApplied"
+FROM "SBO_CAPACITACION_VTAREPUESTO".ORCT T0
+INNER JOIN "SBO_CAPACITACION_VTAREPUESTO".RCT2 T1 ON T0."DocEntry" = T1."DocNum"
+INNER JOIN "SBO_CAPACITACION_VTAREPUESTO".OINV T4 ON T4."DocEntry" = T1."DocEntry"
+WHERE T0."Canceled" = 'N' AND T0."DocDate" BETWEEN '2021-02-10' AND '2021-02-10'
+
+
+Select *
+
+
+from "SBO_TEOJAMA_PREPROD_V3".oinv
+where "CardCode"='C0100031426'
+go
+
+Select * from "SBO_TEOJAMA_PREPROD_V3".orct
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".RCT2
+
+
+--ESTADO DE CUENTA DE REPUESTOS Y SERVICIOS
+Select FACTURA."DocNum" ,
+       FACTURA."CardCode",
+       FACTURA."CardName",
+       FACTURA."U_SYP_SERIESUC" || '-' || FACTURA."U_SYP_MDSD" || '-' || FACTURA."U_SYP_MDCD" AS Factura,
+       FACTURA."DocTotal",
+       FACTURA."DocDate" as FechaFactura,
+       FACTURA."DocDueDate" as  FechaVencimiento,
+       PAGO."DocNum" as Ingreso,
+       PAGO."DocDate" as FechaPago,
+       PAGO."DocTotal" as ValorPago,
+       case when PAGO."CashSum">0 then 'EFECTIVO: ' || PAGO."CashSum"
+       else 'OTROS' 
+       end as FormaPago
+       
+       
+       
+
+
+from "SBO_TEOJAMA_PREPROD_V3".oinv FACTURA
+LEFT JOIN "SBO_TEOJAMA_PREPROD_V3".RCT2 DETALLEPAGO
+ON FACTURA."DocEntry"=DETALLEPAGO."DocEntry"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".orct PAGO
+ON PAGO."DocEntry"=DETALLEPAGO."DocNum"
+
+where FACTURA."CardCode"='C0100031426'
+
+
+
+
+SELECT * FROM "SBO_TEOJAMA_PREPROD_V3".ZTAB_CATALOGO_ON FACTURA
+
+SELECT * FROM SBO_TEO_TALLERES."@SYP_MARCAJE"
+--where "Code"=2
+
+GO
+SELECT * FROM SBO_TEO_TALLERES."@SYP_MARCAJE_DET"
+GO
+SELECT * FROM SBO_TEO_TALLERES."@SYP_MARCAJE"
+where "U_SYP_OT"=95
+
+GO
+SELECT * FROM SBO_TEO_TALLERES."@SYP_MARCAJE_DET"
+where "U_SYP_OT"=95
+GO
+SELECT * FROM SBO_TEO_TALLERES."@SYP_MARCAJE_MAN"
+WHERE "U_SYP_OT"=95
+
+
+SELECT * FROM SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM"
+WHERE "DocEntry"=90
+AND "U_DocNum"=21000103
+
+go
+
+SELECT * FROM SBO_CAPACITACION_CREDITOVTA_V3."ORDR"
+WHERE "DocEntry"=90
+AND "U_DocNum"=21000103
+
+
+
+SELECT * FROM SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM1"
+WHERE "DocEntry"=90
+GO
+SELECT * FROM SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM2"
+WHERE "DocEntry"=90
+go
+SELECT * FROM SBO_CAPACITACION_CREDITOVTA_V3."@HAA_RAM3"
+WHERE "DocEntry"=90
+go
+
+Select * FROM SBO_CAPACITACION_CREDITOVTA_V3.oinv
+where "DocNum"=21900020
+go
+Select * FROM SBO_CAPACITACION_CREDITOVTA_V3.inv1
+where "DocEntry"=480
+go
+SELECT * FROM SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRAM"
+WHERE "DocEntry"=90
+go
+SELECT * FROM SBO_CAPACITACION_CREDITOVTA_V3."@HAA_FRMCO"
+go
+
+select * from "SBO_CAPACITACION_CREDITOVTA_V3"."HAA_TablaAmortizacion"
+
+
+
+
+
+
+
+
+
+
+
+
+
+

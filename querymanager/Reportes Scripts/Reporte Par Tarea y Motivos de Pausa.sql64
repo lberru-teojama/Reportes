@@ -1,0 +1,425 @@
+
+--Column Table "SBO_TEOJAMA_PREPROD_V3".TEOCARTERA
+
+
+"SYPSOFT_TALLERES"
+
+    DROP  Table "SYPSOFT_TALLERES".TMP_TEOTAREASTECNICO
+go
+	CREATE Column Table "SYPSOFT_TALLERES".TMP_TEOTAREASTECNICO(
+		TEO_Orden    	  int,
+		TEO_Ruc		      char(15),
+		TEO_Nombre        varchar(70),
+		TEO_Placa         varchar(20),
+		TEO_Chasis        varchar(30),
+		TEO_Modelo        varchar(30),
+		TEO_Motivo        varchar(100),
+		TEO_Sucursales    varchar(20),
+		TEO_Usuario       varchar(60),
+		TEO_FechaCreacion date,
+		TEO_Tecnico       varchar(50),
+		TEO_CodTarea      varchar(30),
+		TEO_Tareas        varchar(100),
+		TEO_TiempoTarea   varchar(15),
+		TEO_FechaInicio   date,
+		TEO_HoraInicio    varchar(10),
+		TEO_FechaIniPausa date,
+		TEO_HoraIniPausa  varchar(10),
+		TEO_FechaFinPausa date,
+		TEO_HoraFinPausa  varchar(10),
+		TEO_FechaFin      date,
+		TEO_HoraFin       varchar(10),
+		TEO_MotivoPausa   varchar(50),
+		TEO_TiempoPausa   char(20),
+		TEO_TiempoReal    char(20),
+		TEO_Eficiencia    char(20)
+	)
+	
+	
+
+	Create Column Table "SYPSOFT_TALLERES".TMP_TEOPRUEBA(
+		TEO_CODIGO    	  CHAR(50),
+		TEO_Nombre        varchar(80),
+		TEO_VALOR         decimal(12,2)
+	)
+
+
+
+ALTER Procedure "SYPSOFT_TALLERES".TEO_SPTareasTecnicos(
+in FechaI date,
+in FechaF date
+)
+
+LANGUAGE SQLSCRIPT
+    SQL SECURITY INVOKER 
+as    
+BEGIN 
+
+declare Ruc                 varchar(15);
+declare Nombre              varchar(80);
+declare Placa               varchar(30);
+declare FechaFactura        date;
+declare FechaVencimiento    date;
+declare NroMeses            int;
+declare NroDias             int;
+declare Estado              varchar(20);
+declare miFactura           char(20);
+declare Bandera             int;
+declare HoraInicio          varchar(15);
+declare FechaInicial        date;
+declare HoraInicioPausa     varchar(15);
+declare FechaInicialPausa   date;
+declare HoraFinPausa        varchar(15);
+declare Observacion         char(80);
+declare FechaFinalPausa     date;
+declare HoraFin             varchar(15);
+declare FechaFinal          date;
+declare TiempoPausa         char(20);
+declare TiempoTarea         char(20);
+declare CalculoMinutos      double;
+declare CalculoPrueba       decimal(12,6);
+declare TiempoCalculo       double;
+declare TiempoRedondeo      double;
+declare Tiempo              char(20);
+declare ValorMinutos        char(10);
+declare Orden               int;
+declare Tarea               char(60);
+declare miValorTiempo       int;
+declare miValorEntero       int;
+declare miValorDecimal      int;
+declare miEstimado          char(20);
+
+DECLARE CURSOR SumLLamadaServicio FOR
+Select "callID" as Orden,
+       "customer"  as Ruc,
+       "custmrName" as Nombre,
+       "manufSN" as Placa,
+       "internalSN" as Chasis,
+       "itemCode" as Modelo,
+       "subject" as Motivo,
+       SUCURSAL."Name" AS Sucursales,
+       USUARIO."U_NAME" as Usuario,
+       LLAMADASERVICIO."createDate" as FechaCreacion,
+       TECNICO."U_SYP_NOM_TEC" as Tecnico,
+       TECNICO."U_SYP_ITEM_CODE" AS CodTarea,
+       TECNICO."U_SYP_ITEM_NAME" AS Tarea,
+       TECNICO."U_SYP_HRS_ESTM" as Estimado
+from "SYPSOFT_TALLERES".OSCL LLAMADASERVICIO
+inner join "SYPSOFT_TALLERES".OUSR USUARIO
+on LLAMADASERVICIO."assignee"=USUARIO."USERID"
+inner join "SYPSOFT_TALLERES"."@SYP_SUCURSALES" SUCURSAL
+on SUCURSAL."Code"=LLAMADASERVICIO."U_SYP_SUC"
+inner join "SYPSOFT_TALLERES"."@SYP_DET_REGTEC" TECNICO
+on TECNICO."Code"=LLAMADASERVICIO."callID"
+WHERE LLAMADASERVICIO."createDate" between FechaI and FechaF;
+
+
+--Select * from SBO_TEO_TALLERES.OSCL LLAMADASERVICIO
+
+DECLARE CURSOR SumMarcaje FOR
+SELECT REGTEC."U_SYP_MR_FC_INI" as FechaInicial,
+       MARCAJE."U_SYP_MR_HR_INI" as HoraInicio,
+       'INICIO' AS Tipo,
+       '' as Observa
+FROM "SYPSOFT_TALLERES"."@SYP_MARCAJE_DET" MARCAJE
+inner join "SYPSOFT_TALLERES"."@SYP_DET_REGTEC" REGTEC
+on REGTEC."Code"=MARCAJE."U_SYP_OT"
+and MARCAJE."U_SYP_ITEM_NAME"=REGTEC."U_SYP_ITEM_NAME"
+where MARCAJE."U_SYP_OT"=:Orden
+and MARCAJE."U_SYP_ITEM_NAME"=:Tarea
+and MARCAJE."U_SYP_MR_HR_INI"<>''
+UNION ALL
+SELECT REGTEC."U_SYP_DT_FC_INI" as FechaInicial,
+       MARCAJE."U_SYP_DT_HR_INI" as HoraInicio,
+       'INICIO PAUSA' AS Tipo,
+       MARCAJE."U_SYP_OBS" as Observa
+FROM "SYPSOFT_TALLERES"."@SYP_MARCAJE_DET" MARCAJE
+inner join "SYPSOFT_TALLERES"."@SYP_DET_REGTEC" REGTEC
+on REGTEC."Code"=MARCAJE."U_SYP_OT"
+and MARCAJE."U_SYP_ITEM_NAME"=REGTEC."U_SYP_ITEM_NAME"
+where MARCAJE."U_SYP_OT"=:Orden
+and MARCAJE."U_SYP_ITEM_NAME"=:Tarea
+and MARCAJE."U_SYP_DT_HR_INI"<>''
+UNION ALL
+SELECT REGTEC."U_SYP_DT_FC_FIN" as FechaInicial,
+       MARCAJE."U_SYP_DT_HR_FIN" as HoraInicio,
+       'FIN PAUSA' AS Tipo,
+       MARCAJE."U_SYP_OBS" as Observa
+FROM "SYPSOFT_TALLERES"."@SYP_MARCAJE_DET" MARCAJE
+inner join "SYPSOFT_TALLERES"."@SYP_DET_REGTEC" REGTEC
+on REGTEC."Code"=MARCAJE."U_SYP_OT"
+and MARCAJE."U_SYP_ITEM_NAME"=REGTEC."U_SYP_ITEM_NAME"
+where MARCAJE."U_SYP_OT"=:Orden
+and MARCAJE."U_SYP_ITEM_NAME"=:Tarea
+and MARCAJE."U_SYP_DT_HR_FIN"<>''
+UNION ALL
+SELECT REGTEC."U_SYP_MR_FC_FIN" as FechaInicial,
+       MARCAJE."U_SYP_MR_HR_FIN" as HoraInicio,
+       'FIN' AS Tipo,
+       MARCAJE."U_SYP_OBS" as Observa
+FROM "SYPSOFT_TALLERES"."@SYP_MARCAJE_DET" MARCAJE
+inner join "SYPSOFT_TALLERES"."@SYP_DET_REGTEC" REGTEC
+on REGTEC."Code"=MARCAJE."U_SYP_OT"
+and MARCAJE."U_SYP_ITEM_NAME"=REGTEC."U_SYP_ITEM_NAME"
+where MARCAJE."U_SYP_OT"=:Orden
+and MARCAJE."U_SYP_ITEM_NAME"=:Tarea
+and MARCAJE."U_SYP_MR_HR_FIN"<>'';
+
+Delete from "SYPSOFT_TALLERES".TMP_TEOTAREASTECNICO;
+
+--Delete from  "SYPSOFT_TALLERES".TMP_TEOPRUEBA;
+	
+FOR cur_llamada as SumLLamadaServicio DO
+
+    Orden=:cur_llamada.Orden;
+    Tarea=:cur_llamada.Tarea;
+    bandera=0;
+    
+
+    FOR cur_marcaje as SumMarcaje DO
+    
+        if (:cur_marcaje.Tipo='INICIO') then
+            HoraInicio=:cur_marcaje.horainicio;
+            FechaInicial=:cur_marcaje.fechainicial;
+        end if;
+        if (:cur_marcaje.Tipo='INICIO PAUSA') then
+            HoraInicioPausa=:cur_marcaje.horainicio;
+            if :cur_marcaje.observa<>'' then
+                Observacion=:cur_marcaje.observa;
+            end if;
+            FechaInicialPausa=:cur_marcaje.fechainicial;
+        end if;
+        if (:cur_marcaje.Tipo='FIN PAUSA') then
+            HoraFinPausa=:cur_marcaje.horainicio;
+            if :cur_marcaje.observa<>'' then
+                Observacion=:cur_marcaje.observa;
+            end if;
+            FechaFinalPausa=:cur_marcaje.fechainicial;
+        end if;
+        if (:cur_marcaje.Tipo='FIN') then
+            HoraFin=:cur_marcaje.horainicio;
+            FechaFinal=:cur_marcaje.fechainicial;
+        end if;
+        
+        bandera=1;
+        
+    END FOR;
+    
+ if :bandera=1 then
+    
+    if :HoraInicio is not null then
+    
+        --Insert into "SYPSOFT_TALLERES".TMP_TEOPRUEBA(TEO_CODIGO,TEO_Nombre,TEO_VALOR)
+        --VALUES ('1',:HoraInicio,:HoraFin);
+    
+    SELECT SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicio),'2021-01-01 ' || trim(:HoraFin))  / 3600 ,round((SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicio),'2021-01-01 ' || trim(:HoraFin))  / 3600),0) 
+    into TiempoCalculo,TiempoRedondeo
+    FROM DUMMY; 
+    
+    --Select TiempoCalculo,TiempoRedondeo from DUMMY; 
+    if TiempoRedondeo<=0 then
+        Tiempo='0';
+        else
+        Tiempo=char(TiempoRedondeo);
+    end if; 
+    
+    CalculoMinutos=(TiempoCalculo-TiempoRedondeo)*60;
+    
+    ValorMinutos=round(CalculoMinutos,0);
+
+    if length(trim(ValorMinutos))=1 then
+        ValorMinutos='0' || trim(ValorMinutos);
+    end if;
+    
+    TiempoTarea=trim(Tiempo) || ':' || trim(ValorMinutos);     
+    
+    end if;
+    
+    if HoraInicioPausa<>'' then
+    
+        Select SYPSOFT_TALLERES.TEO_FunctiongetTiempo(FechaInicialPausa,HoraInicioPausa,FechaFinalPausa,HoraFinPausa) 
+        into TiempoPausa
+        from DUMMY T2;
+    
+    --SELECT SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicioPausa),'2021-01-01 ' || trim(:HoraFinPausa))  / 3600 ,round((SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicioPausa),'2021-01-01 ' || trim(:HoraFinPausa))  / 3600),0) 
+    --into TiempoCalculo,TiempoRedondeo
+    --FROM DUMMY;
+    
+    --if TiempoRedondeo<=0 then
+    --    Tiempo='0';
+    --    else
+    --    Tiempo=char(TiempoRedondeo);
+    --end if;   
+    
+    ---CalculoMinutos=(TiempoCalculo-TiempoRedondeo)*60;
+    
+    --ValorMinutos=round(CalculoMinutos,0);
+
+    --if length(trim(ValorMinutos))=1 then
+    --    ValorMinutos='0' || trim(ValorMinutos);
+    --end if;
+    
+    --TiempoPausa=trim(Tiempo) || ':' || trim(ValorMinutos);    
+    
+    end if;
+    
+  end if;
+  
+  miValorTiempo=:cur_llamada.estimado*60;
+  if miValorTiempo>=60 then
+     miValorEntero=miValorTiempo/60;
+     miValorDecimal=miValorTiempo-(miValorEntero*60);
+     miEstimado=miValorEntero || ':' || miValorDecimal;
+     else
+     miEstimado='0:' || miValorTiempo;
+  end if;
+  
+    
+    Insert into "SYPSOFT_TALLERES".TMP_TEOTAREASTECNICO (TEO_Orden,TEO_Ruc,TEO_Nombre,TEO_Placa,
+            TEO_Chasis,TEO_Modelo,TEO_Motivo,TEO_Sucursales,
+            TEO_Usuario,TEO_FechaCreacion,TEO_Tecnico,TEO_CodTarea,
+		    TEO_Tareas,TEO_TiempoTarea,TEO_FechaInicio,TEO_HoraInicio,
+		    TEO_FechaIniPausa,TEO_HoraIniPausa,TEO_FechaFinPausa,TEO_HoraFinPausa,
+		    TEO_FechaFin,TEO_HoraFin,
+		    TEO_MotivoPausa,TEO_TiempoPausa,TEO_TiempoReal,TEO_Eficiencia)
+    Values (:cur_llamada.orden,:cur_llamada.ruc,:cur_llamada.nombre,:cur_llamada.placa,
+            :cur_llamada.chasis,:cur_llamada.modelo,:cur_llamada.motivo,:cur_llamada.sucursales,
+            :cur_llamada.usuario,:cur_llamada.fechacreacion,:cur_llamada.tecnico,:cur_llamada.codtarea,
+            :cur_llamada.tarea,:miEstimado,:FechaInicial,:HoraInicio,
+            :FechaInicialPausa,:HoraInicioPausa,:FechaFinalPausa,:HoraFinPausa,
+            :FechaFinal,:HoraFin,
+            :Observacion,:TiempoPausa,:TiempoTarea,0);
+    
+    
+    HoraInicio=null;
+    FechaInicial =null;
+    HoraInicioPausa=null;
+    FechaInicialPausa=null;
+    HoraFin=null;
+    FechaFinal=null;
+    Observacion='';
+    TiempoPausa=null;
+    TiempoTarea=null;
+    FechaInicialPausa=null;
+    HoraInicioPausa=null;
+    FechaFinalPausa=null;
+    HoraFinPausa=null;
+    
+    --SELECT * FROM sbo_teojama_preprod_v3.OSRI VE
+END FOR;
+
+--Drop Table "SBO_TEOJAMA_PREPROD_V3".#TMP_TEOTAREASTECNICO;
+
+end;
+
+
+
+
+go
+
+call "SYPSOFT_TALLERES".TEO_SPTareasTecnicos('2021-01-01','2021-07-26')
+
+
+
+GO
+select TEO_Orden as OT,
+		TEO_Ruc AS Ruc,
+		TEO_Nombre as Nombre,
+		TEO_Placa as Placa,
+		TEO_Chasis as Chasis,
+		TEO_Modelo as Modelo,
+		TEO_Motivo as Motivo,
+		TEO_Sucursales as Sucursal,
+		TEO_Usuario as Usuario,
+		TEO_FechaCreacion as Fecha,
+		TEO_Tecnico as Tecnico,
+		TEO_CodTarea as CodTarea,
+		TEO_Tareas as Tarea,
+		--TO_DECIMAL(TEO_TiempoTarea, 10, 2)*60,
+		TEO_TiempoTarea as TiempoTarea,
+		TEO_MotivoPausa as MotivoPausa,
+		TEO_FechaIniPausa as FechaIniPausa,
+		TEO_HoraIniPausa as HoraIniPausa,
+		TEO_FechaFinPausa as FechaFinPausa,
+		TEO_HoraFinPausa as HoraFinPausa,
+		TEO_TiempoPausa as TiempoPausa 
+from "SYPSOFT_TALLERES".TMP_TEOTAREASTECNICO
+where TEO_TiempoPausa is not null
+and   TEO_FechaIniPausa is not null
+
+
+ Select SBO_TEOJAMA_PREPROD_V3.TEO_FunctiongetTiempo('2021-07-01','16:30','2021-07-01','16:31') 
+                from SBO_TEOJAMA_PREPROD_V3.OINM T2
+             
+
+
+select *
+from "SYPSOFT_TALLERES".TMP_TEOTAREASTECNICO
+
+
+
+Select "callID" as Orden,
+       "customer"  as Ruc,
+       "custmrName" as Nombre,
+       "manufSN" as Placa,
+       "internalSN" as Chasis,
+       "itemCode" as Modelo,
+       "subject" as Motivo,
+       SUCURSAL."Name" AS Sucursales,
+       USUARIO."U_NAME" as Usuario,
+       LLAMADASERVICIO."createDate" as FechaCreacion,
+       TECNICO."U_SYP_NOM_TEC" as Tecnico,
+       TECNICO."U_SYP_ITEM_CODE" AS CodTarea,
+       TECNICO."U_SYP_ITEM_NAME" AS Tarea,
+       TECNICO."U_SYP_HRS_ESTM" as Estimado
+from "SYPSOFT_TALLERES".OSCL LLAMADASERVICIO
+inner join "SYPSOFT_TALLERES".OUSR USUARIO
+on LLAMADASERVICIO."assignee"=USUARIO."USERID"
+inner join "SYPSOFT_TALLERES"."@SYP_SUCURSALES" SUCURSAL
+on SUCURSAL."Code"=LLAMADASERVICIO."U_SYP_SUC"
+inner join "SYPSOFT_TALLERES"."@SYP_DET_REGTEC" TECNICO
+on TECNICO."Code"=LLAMADASERVICIO."callID"
+WHERE LLAMADASERVICIO."createDate" between '2021-05-25' and '2021-05-25'
+
+
+
+SELECT REGTEC."U_SYP_DT_FC_INI" as FechaInicial,
+       MARCAJE."U_SYP_DT_HR_INI" as HoraInicio,
+       'INICIO PAUSA' AS Tipo,
+       MARCAJE."U_SYP_OBS" as Observa
+FROM "SYPSOFT_TALLERES"."@SYP_MARCAJE_DET" MARCAJE
+inner join "SYPSOFT_TALLERES"."@SYP_DET_REGTEC" REGTEC
+on REGTEC."Code"=MARCAJE."U_SYP_OT"
+and MARCAJE."U_SYP_ITEM_NAME"=REGTEC."U_SYP_ITEM_NAME"
+where MARCAJE."U_SYP_OT"=390
+and MARCAJE."U_SYP_ITEM_NAME"='REEMPLAZO DE BASE DE MOTOR (CHASIS)'
+and MARCAJE."U_SYP_DT_HR_INI"<>''
+UNION ALL
+SELECT REGTEC."U_SYP_DT_FC_FIN" as FechaInicial,
+       MARCAJE."U_SYP_DT_HR_FIN" as HoraInicio,
+       'FIN PAUSA' AS Tipo,
+       MARCAJE."U_SYP_OBS" as Observa
+FROM "SYPSOFT_TALLERES"."@SYP_MARCAJE_DET" MARCAJE
+inner join "SYPSOFT_TALLERES"."@SYP_DET_REGTEC" REGTEC
+on REGTEC."Code"=MARCAJE."U_SYP_OT"
+and MARCAJE."U_SYP_ITEM_NAME"=REGTEC."U_SYP_ITEM_NAME"
+where MARCAJE."U_SYP_OT"=390
+and MARCAJE."U_SYP_ITEM_NAME"='REEMPLAZO DE BASE DE MOTOR (CHASIS)'
+and MARCAJE."U_SYP_DT_HR_FIN"<>''
+
+
+REEMPLAZO DE BIELA Y/O BOCIN DE BIELA
+REEMPLAZO DE EMPAQUE DE TAPA VALVULAS
+REEMPLAZO DE EMPAQUE METALICO DE DISTRIBUCION
+REEMPLAZO DE BASE DE MOTOR (CHASIS)
+
+Select * from "SYPSOFT_TALLERES".OSCL LLAMADASERVICIO
+WHERE LLAMADASERVICIO."createDate" between '2021-05-25' and '2021-05-27'
+
+
+
+    SELECT SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicio),'2021-01-01 ' || trim(:HoraFin))  / 3600 ,round((SECONDS_BETWEEN ('2021-01-01 ' || trim(:HoraInicio),'2021-01-01 ' || trim(:HoraFin))  / 3600),0) 
+    into TiempoCalculo,TiempoRedondeo
+    FROM DUMMY
+
+

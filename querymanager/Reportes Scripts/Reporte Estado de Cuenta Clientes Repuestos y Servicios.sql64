@@ -1,0 +1,304 @@
+Select C."CheckNum" as NroCheque,
+C."AcctNum" as NroCuenta,
+B."BankName" as Banco,
+C."DueDate" as Fecha,
+C."CheckSum" as Valor,
+PF."DocNum" as NroIngreso,
+PF."CardName" as Nombre
+from "SBO_TEOJAMA_PREPROD_V3".rct1 C,"SBO_TEOJAMA_PREPROD_V3".ODSC B , "SBO_TEOJAMA_PREPROD_V3".orct PF
+where C."BankCode"=B."BankCode"
+and PF."DocEntry"=C."DocNum"
+and C."DueDate" between '2021-07-13' and '2021-07-13'
+
+
+
+
+DROP Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPEstadoCuentaRepSer
+go
+Create Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPEstadoCuentaRepSer(
+in miTipo       char(20),    
+in Documento    char(20)
+)
+
+LANGUAGE SQLSCRIPT
+    SQL SECURITY INVOKER 
+as    
+BEGIN 
+
+declare miFactura           char(20);
+declare DocNum              int;
+declare DocEntry            int;
+declare Cedula              char(20);
+declare Nombre              varchar(100);
+declare Factura             char(25);
+declare Total               decimal(12,2);
+declare Saldo               decimal(12,2);
+declare miPago              decimal(12,2);
+declare FechaFactura        date;
+declare FechaVencimiento    date;
+declare Estado              char(20);
+declare Tipo                varchar(40);
+declare miTipoA             varchar(40);
+declare bandera             int;
+declare Linea               int;
+declare miFormaPago         varchar(100);
+declare FormaPagoCheque     varchar(60);
+
+DECLARE CURSOR SumFactura FOR
+Select FACTURA."DocNum" as DocNum,
+       FACTURA."CardCode" AS Cedula,
+       FACTURA."CardName" as Nombre,
+       FACTURA."U_SYP_SERIESUC" || '-' || FACTURA."U_SYP_MDSD" || '-' || FACTURA."U_SYP_MDCD" AS Factura,
+       FACTURA."DocTotal" as Total,
+       FACTURA."DocDate" as FechaFactura,
+       FACTURA."DocDueDate" as  FechaVencimiento,
+       case when FACTURA."DocTotal"-FACTURA."PaidToDate">0 then 'PEN'
+            when FACTURA."DocTotal"-FACTURA."PaidToDate"=0 then 'CAN'
+       end as Estado,
+       FACTURA."DocEntry" as "DOCENTRY",
+       FACTURA."DocTotal"-FACTURA."PaidToDate" as Saldo,
+       DT."LineNum" as Linea,
+       TV."Name" as Tipo
+from "SBO_TEOJAMA_PREPROD_V3".oinv FACTURA
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".INV1 DT
+ON FACTURA."DocEntry"=DT."DocEntry"
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3"."@SYP_TIPOVENTA" TV
+ON TV."Code"=FACTURA."U_SYP_TVENTA"
+where TV."Name" in ('Venta de Repuestos','Venta de Servicios')
+and FACTURA."CardCode"='C' || trim(:Documento);
+
+
+DECLARE CURSOR SumPago FOR
+--ESTADO DE CUENTA DE REPUESTOS Y SERVICIOS
+Select PAGO."DocNum" as Ingreso,
+       PAGO."DocDate" as FechaPago,
+       PAGO."DocTotal" as ValorPago,
+       case when PAGO."CashSum">0 then 'EFE: ' || cast(PAGO."CashSum" as decimal(12,2))
+       end as FormaPago,
+       case when PAGO."CheckSum">0 then 'CHE: ' || cast(PAGO."CheckSum" as decimal(12,2))
+       end as FormaPago2,
+       case when PAGO."TrsfrSum">0 then 'DEP: ' || cast(PAGO."TrsfrSum" as decimal(12,2))
+       end as FormaPago3,
+       PAGO."DocEntry" as DocEntry
+from "SBO_TEOJAMA_PREPROD_V3".RCT2 DETALLEPAGO
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".orct PAGO
+ON PAGO."DocEntry"=DETALLEPAGO."DocNum"
+where DETALLEPAGO."DocEntry"=:DocEntry
+and PAGO."Canceled"<>'Y';
+
+
+DECLARE CURSOR SumNC FOR
+Select NC."DocNum" as DocNumNC,
+       NC."DocDate" as FechaPagoNC,
+       NC."DocTotal" as TotalNC,
+       NC."U_SYP_SERIESUC" || '-' || NC."U_SYP_MDSD" || '-' || NC."U_SYP_MDCD" AS NC
+from "SBO_TEOJAMA_PREPROD_V3".orin NC
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".RIN1 DT
+ON NC."DocEntry"=DT."DocEntry"
+where DT."BaseEntry"=:DocEntry
+and  DT."BaseLine"=:Linea
+and  NC."CANCELED"<>'Y';
+
+--select * from "SBO_TEOJAMA_PREPROD_V3".orin NC
+
+Delete from "SBO_TEOJAMA_PREPROD_V3".teotmpecfactura;
+
+FOR cur_factura as SumFactura DO
+
+    DocEntry=cur_factura.DOCENTRY;
+    DocNum=:cur_factura.DOCNUM;
+    Cedula=:cur_factura.Cedula;
+    Nombre=:cur_factura.Nombre;
+    Factura=:cur_factura.Factura;
+    Total=:cur_factura.Total;
+    FechaFactura=:cur_factura.FechaFactura;
+    FechaVencimiento=:cur_factura.FechaVencimiento;
+    Saldo=:cur_factura.Saldo;
+    Estado=:cur_factura.Estado;
+    bandera=0;
+    Linea=:cur_factura.Linea;
+    Tipo=:cur_factura.Tipo;
+    miFormaPago='';
+    FormaPagoCheque='';
+    
+    
+    if Tipo='Venta de Repuestos' then
+        miTipoA='REPUESTOS';
+    end if;
+    if Tipo='Venta de Servicios' then
+        miTipoA='SERVICIOS';
+    end if;
+    
+    
+    FOR cur_pago as SumPago DO
+    
+        bandera=1;
+        if :cur_pago.ValorPago>:Total then
+            miPago=:Total;
+            else
+            miPago=:cur_pago.ValorPago;
+        end if;
+        
+        if :cur_Pago.FormaPago2<>'' then
+        
+            Select 'CHE N-' || trim(C."CheckNum") || '-' || trim(B."BankName") || ' ' || cast(trim(C."CheckSum") as decimal(12,2))
+            into FormaPagoCheque
+            from "SBO_TEOJAMA_PREPROD_V3".rct1 C,"SBO_TEOJAMA_PREPROD_V3".ODSC B 
+            where C."BankCode"=B."BankCode"
+            and C."DocNum"=:cur_Pago.DocEntry;
+            
+       end if;
+            
+        miFormaPago=ifnull(:cur_Pago.FormaPago,'') || ' ' || ifnull(FormaPagoCheque,'') || ' ' || ifnull(:cur_Pago.FormaPago3,'');
+    
+         Insert into "SBO_TEOJAMA_PREPROD_V3".teotmpecfactura (TDocNum,TCedula,TNombre,TFactura,
+         TTotal,TFechaFactura,TFechaVencimiento,TSaldo,
+         TIngreso,TFechaPago,TValorPago,TEstado,
+         TFormaPago,ttipo)
+         Values (:DocNum,:Cedula,:Nombre,:Factura,
+        :Total,:FechaFactura,:FechaVencimiento,:Saldo,
+        :cur_pago.Ingreso,:cur_pago.FechaPago,:miPago,:Estado,
+        :miFormaPago,:miTipoA);
+    
+    END FOR;
+    
+    FOR cur_nc as SumNC DO
+    
+        bandera=1;
+    
+         Insert into "SBO_TEOJAMA_PREPROD_V3".teotmpecfactura (TDocNum,TCedula,TNombre,TFactura,
+         TTotal,TFechaFactura,TFechaVencimiento,TSaldo,
+         TIngreso,TFechaPago,TValorPago,TEstado,
+         TFormaPago,ttipo)
+         Values (:DocNum,:Cedula,:Nombre,:Factura,
+        :Total,:FechaFactura,:FechaVencimiento,:Saldo,
+        :cur_nc.NC,:cur_nc.FechaPagoNC,:cur_nc.TotalNC,:Estado,
+        'NC',:miTipoA);
+    
+    END FOR;
+    
+    if bandera=0 then
+    
+        Insert into "SBO_TEOJAMA_PREPROD_V3".teotmpecfactura (TDocNum,TCedula,TNombre,TFactura,
+        TTotal,TFechaFactura,TFechaVencimiento,TSaldo,
+        TIngreso,TFechaPago,TValorPago,TEstado,
+        TFormaPago,ttipo)
+        Values (:DocNum,:Cedula,:Nombre,:Factura,
+        :Total,:FechaFactura,:FechaVencimiento,:Saldo,
+        '',null,0,'PEN',
+        '',:miTipoA);    
+    
+    end if;
+    
+END FOR;
+
+
+Select TDOCNUM as DocNum,
+       TCEDULA as Cedula,
+       TNOMBRE as Nombre,
+       TFACTURA as Factura,
+       TTOTAL as Total,
+       TFECHAFACTURA as FechaFactura,
+       TFECHAVENCIMIENTO as FechaVencimiento,
+       TSALDO as Saldo,
+       TINGRESO as Ingreso,
+       TFECHAPAGO as FechaPago,
+       TVALORPAGO as ValorPago,
+       TESTADO as Estado,
+       TFORMAPAGO as FormaPago
+from "SBO_TEOJAMA_PREPROD_V3".teotmpecfactura
+where TTIPO=miTipo
+and   TCedula='C' || trim(Documento);
+
+end
+
+
+
+
+go
+call "SBO_TEOJAMA_PREPROD_V3".TEO_SPEstadoCuentaRepSer('REPUESTOS','00369522')
+GO
+SELECT * FROM "SBO_TEOJAMA_PREPROD_V3".teotmpecfactura
+
+
+
+
+21000011
+
+C00369522
+
+select * from "SBO_TEOJAMA_PREPROD_V3".orct
+where "DocNum"=21000023
+go
+select * from "SBO_TEOJAMA_PREPROD_V3".rct2
+where "DocNum"=125
+
+
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".oinv FACTURA
+where "CardCode"='C00369522'
+and "DocNum"=21000051
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".INV1
+where "DocEntry"=407
+
+and "DocNum"=21000211
+
+
+21000051
+21000052
+Select * from "SBO_TEOJAMA_PREPROD_V3".orin dt
+go
+
+Select * from "SBO_TEOJAMA_PREPROD_V3".RIN1 dt
+
+
+
+Select * from "SBO_TEOJAMA_PREPROD_V3".orin NC
+INNER JOIN "SBO_TEOJAMA_PREPROD_V3".RIN1 DT
+ON NC."DocEntry"=DT."DocEntry"
+where NC."DocNum"=21000212
+and  DT."BaseEntry"=:DocEntry
+and  DT."BaseLine"=:Linea;
+
+
+go
+Select * from "SBO_TEOJAMA_PREPROD_V3".RIN1 dt
+
+
+
+Select "DocEntry","DocNum",
+"BaseEntry",
+--"LineNum",
+"BaseLine"
+
+from "SBO_TEOJAMA_PREPROD_V3".RIN1 NC
+where "CANCELED"<>'Y'
+
+
+
+---A NIVEL DE DETALLE
+
+FROM
+
+OINV T0
+
+INNER JOIN OCRD T1 ON T0.CARDCODE= T1.CARDCODE
+
+INNER JOIN OCTG T2 ON T1.GROUPNUM = T2.GROUPNUM
+
+INNER JOIN OSLP T3 on T0.SlpCode = T3.SlpCode
+
+INNER JOIN INV1 T4 ON T0.DocEntry = T4.DocEntry
+
+LEFT OUTER JOIN RIN1 T5 ON T4.DocEntry = T5.BaseEntry AND T4.LineNum = T5.BaseLine
+
+LEFT JOIN ORIN T6 ON T5.DocEntry = T6.DocEntry
+
+
+
+T4.DocEntry = T5.BaseEntry AND T4.LineNum = T5.BaseLine
+
+
+
+21000005
