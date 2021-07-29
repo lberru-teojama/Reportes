@@ -1,8 +1,8 @@
 
-CALL "SBO_TEOJAMA_PREPROD_V3".TEO_SPEgresosCaja(-2,'2021-01-21')
+CALL "SBO_TEOJAMA_PREPROD_V3".TEO_SPEgresosCaja(2,'2021-01-21')
 
 
-Create Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPEgresosCaja(
+Alter Procedure "SBO_TEOJAMA_PREPROD_V3".TEO_SPEgresosCaja(
 in Sucursal     char(20),
 in fechaini     date
 )
@@ -19,15 +19,33 @@ Select O."DocNum" as Nro,
        O."CashSum" as Valor,
        O."DocDate" as Fecha,
        U."U_NAME" as Usuario,
-       S."Name" as Sucursal
+       S."Name" as Sucursal,
+       T."U_SYP_DESCR" AS Concepto
 from SBO_TEOJAMA_PREPROD_V3.OVPM O
 INNER JOIN SBO_TEOJAMA_PREPROD_V3.OUSR U
 ON U."USERID"=O."UserSign"
 inner join SBO_TEOJAMA_PREPROD_V3."@SYP_SUCURSALES" S
 ON S."Code"=U."Branch"
+INNER JOIN SBO_TEOJAMA_PREPROD_V3."@SYP_TOPER" T
+ON T."Code"=O."U_SYP_TIPOOPERACION"
 where O."Canceled"<>'Y'
 and O."CashSum">0
 and S."Code"=:Sucursal
 and O."DocDate"=:fechaini;
 
 end;
+
+
+Select *
+from SBO_TEOJAMA_PREPROD_V3."@SYP_TOPER" S
+
+INNER JOIN SBO_TEOJAMA_PREPROD_V3.OUSR U
+ON U."USERID"=O."UserSign"
+inner join SBO_TEOJAMA_PREPROD_V3."@SYP_SUCURSALES" S
+ON S."Code"=U."Branch"
+where O."Canceled"<>'Y'
+and O."CashSum">0
+and S."Code"=-2
+
+and O."DocDate"=:fechaini;
+
